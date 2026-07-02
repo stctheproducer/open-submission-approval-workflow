@@ -1,12 +1,12 @@
 import type Application from '#models/application'
-import type ApplicationAuditLogEntry from '#models/application_audit_log_entry'
+import ApplicationStatusTransitionTransformer from '#transformers/application_status_transition_transformer'
 import UserTransformer from '#transformers/user_transformer'
 import { BaseTransformer } from '@adonisjs/core/transformers'
 import { ApplicationStatus } from '#values/application_status'
 
 export default class ApplicationTransformer extends BaseTransformer<Application> {
   toObject() {
-    const history = this.resource.auditLogEntries ?? []
+    const transitions = this.resource.statusTransitions ?? this.resource.auditLogEntries ?? []
     return {
       id: this.resource.id,
       title: this.resource.title ?? this.resource.organizationName,
@@ -21,34 +21,28 @@ export default class ApplicationTransformer extends BaseTransformer<Application>
       assignedReviewer: this.resource.assignedReviewer
         ? UserTransformer.transform(this.resource.assignedReviewer)
         : null,
+      reviewer: this.resource.assignedReviewer
+        ? UserTransformer.transform(this.resource.assignedReviewer)
+        : null,
       createdAt: this.resource.createdAt,
       updatedAt: this.resource.updatedAt,
       reviewState: this.resource.assignedReviewerId
         ? this.resource.assignedReviewerId === this.resource.assignedReviewer?.id
           ? 'owned'
           : 'other'
-        : this.resource.status === ApplicationStatus.SUBMITTED
-          ? 'ready'
-          : 'other',
-      history: history.map((entry) => serializeApplicationAuditLogEntry(entry)),
+          : this.resource.status === ApplicationStatus.SUBMITTED
+            ? 'ready'
+            : 'other',
+      statusTransitions: ApplicationStatusTransitionTransformer.transform(transitions),
+      history: ApplicationStatusTransitionTransformer.transform(transitions),
     }
   }
 
   isEditable() {
     return this.resource.status === ApplicationStatus.DRAFT
   }
-}
 
-function serializeApplicationAuditLogEntry(resource: ApplicationAuditLogEntry) {
-  return {
-    id: resource.id,
-    previousStatus: resource.previousStatus,
-    nextStatus: resource.nextStatus,
-    comment: resource.comment,
-    recordedAt: {
-      raw: resource.createdAt.toISO(),
-      formatted: resource.createdAt.toFormat('yyyy-LL-dd HH:mm'),
-    },
-    performedBy: resource.actor ? UserTransformer.transform(resource.actor) : null,
+  async forDetailedView() {
+    return this.toObject()
   }
 }

@@ -55,6 +55,12 @@ router
           controllers.ApplicationReviewStarts,
           'store',
         ])
+        router
+          .post('applications/:applicationId/approvals', [
+            controllers.ApplicationApprovals,
+            'store',
+          ])
+          .where('applicationId', router.matchers.number())
       })
       .prefix('reviewer')
       .as('reviewer')

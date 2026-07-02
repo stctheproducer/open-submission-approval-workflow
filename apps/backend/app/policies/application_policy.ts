@@ -19,4 +19,16 @@ export default class ApplicationPolicy extends BasePolicy {
 
     return AuthorizationResponse.deny('Application not found', 404)
   }
+
+  approve(user: User, application: Application): AuthorizerResponse {
+    if (user.role !== 'reviewer') {
+      return AuthorizationResponse.deny('Forbidden', 403)
+    }
+
+    if (application.assignedReviewerId !== user.id) {
+      return AuthorizationResponse.deny('Forbidden', 403)
+    }
+
+    return AuthorizationResponse.allow()
+  }
 }

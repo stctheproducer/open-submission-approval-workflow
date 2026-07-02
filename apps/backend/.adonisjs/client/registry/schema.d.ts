@@ -163,4 +163,16 @@ export interface Registry {
       errorResponse: ExtractErrorResponse<Awaited<ReturnType<import('#controllers/application_review_starts_controller').default['store']>>>
     }
   }
+  'reviewer.application_approvals.store': {
+    methods: ["POST"]
+    pattern: '/api/v1/reviewer/applications/:applicationId/approvals'
+    types: {
+      body: {}
+      paramsTuple: [ParamValue]
+      params: { applicationId: ParamValue }
+      query: {}
+      response: ExtractResponse<Awaited<ReturnType<import('#controllers/application_approvals_controller').default['store']>>>
+      errorResponse: ExtractErrorResponse<Awaited<ReturnType<import('#controllers/application_approvals_controller').default['store']>>>
+    }
+  }
 }

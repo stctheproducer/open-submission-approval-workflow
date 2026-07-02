@@ -3,6 +3,7 @@ import { belongsTo, hasMany, scope } from '@adonisjs/lucid/orm'
 import type { BelongsTo, HasMany } from '@adonisjs/lucid/types/relations'
 import User from '#models/user'
 import ApplicationAuditLogEntry from '#models/application_audit_log_entry'
+import ApplicationStatusTransition from '#models/application_status_transition'
 import { ApplicationStatus } from '#values/application_status'
 
 export default class Application extends ApplicationSchema {
@@ -14,6 +15,9 @@ export default class Application extends ApplicationSchema {
 
   @hasMany(() => ApplicationAuditLogEntry)
   declare auditLogEntries: HasMany<typeof ApplicationAuditLogEntry>
+
+  @hasMany(() => ApplicationStatusTransition)
+  declare statusTransitions: HasMany<typeof ApplicationStatusTransition>
 
   get isDraft() {
     return this.status === 'draft'
