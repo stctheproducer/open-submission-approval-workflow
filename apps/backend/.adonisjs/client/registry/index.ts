@@ -66,6 +66,24 @@ const routes = {
     tokens: [{"old":"/api/v1/applicant/applications/:application_id/submissions","type":0,"val":"api","end":""},{"old":"/api/v1/applicant/applications/:application_id/submissions","type":0,"val":"v1","end":""},{"old":"/api/v1/applicant/applications/:application_id/submissions","type":0,"val":"applicant","end":""},{"old":"/api/v1/applicant/applications/:application_id/submissions","type":0,"val":"applications","end":""},{"old":"/api/v1/applicant/applications/:application_id/submissions","type":1,"val":"application_id","end":""},{"old":"/api/v1/applicant/applications/:application_id/submissions","type":0,"val":"submissions","end":""}],
     types: placeholder as Registry['applicant.applications.submissions.store']['types'],
   },
+  'reviewer.applications.index': {
+    methods: ["GET","HEAD"],
+    pattern: '/api/v1/reviewer/applications',
+    tokens: [{"old":"/api/v1/reviewer/applications","type":0,"val":"api","end":""},{"old":"/api/v1/reviewer/applications","type":0,"val":"v1","end":""},{"old":"/api/v1/reviewer/applications","type":0,"val":"reviewer","end":""},{"old":"/api/v1/reviewer/applications","type":0,"val":"applications","end":""}],
+    types: placeholder as Registry['reviewer.applications.index']['types'],
+  },
+  'reviewer.applications.show': {
+    methods: ["GET","HEAD"],
+    pattern: '/api/v1/reviewer/applications/:id',
+    tokens: [{"old":"/api/v1/reviewer/applications/:id","type":0,"val":"api","end":""},{"old":"/api/v1/reviewer/applications/:id","type":0,"val":"v1","end":""},{"old":"/api/v1/reviewer/applications/:id","type":0,"val":"reviewer","end":""},{"old":"/api/v1/reviewer/applications/:id","type":0,"val":"applications","end":""},{"old":"/api/v1/reviewer/applications/:id","type":1,"val":"id","end":""}],
+    types: placeholder as Registry['reviewer.applications.show']['types'],
+  },
+  'reviewer.applications.review_starts.store': {
+    methods: ["POST"],
+    pattern: '/api/v1/reviewer/applications/:id/review-starts',
+    tokens: [{"old":"/api/v1/reviewer/applications/:id/review-starts","type":0,"val":"api","end":""},{"old":"/api/v1/reviewer/applications/:id/review-starts","type":0,"val":"v1","end":""},{"old":"/api/v1/reviewer/applications/:id/review-starts","type":0,"val":"reviewer","end":""},{"old":"/api/v1/reviewer/applications/:id/review-starts","type":0,"val":"applications","end":""},{"old":"/api/v1/reviewer/applications/:id/review-starts","type":1,"val":"id","end":""},{"old":"/api/v1/reviewer/applications/:id/review-starts","type":0,"val":"review-starts","end":""}],
+    types: placeholder as Registry['reviewer.applications.review_starts.store']['types'],
+  },
 } as const satisfies Record<string, AdonisEndpoint>
 
 export { routes }

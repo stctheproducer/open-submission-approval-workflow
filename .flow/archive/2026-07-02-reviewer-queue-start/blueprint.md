@@ -1,5 +1,6 @@
 ---
 planned: 2026-07-02
+built: 2026-07-02
 ---
 
 # Reviewer Queue Start — Implementation Plan

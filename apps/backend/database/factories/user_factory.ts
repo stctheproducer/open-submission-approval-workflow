@@ -8,6 +8,7 @@ export const UserFactory = factory
       fullName: faker.person.fullName(),
       email: faker.internet.email().toLowerCase(),
       password: await hash.make('password'),
+      role: 'applicant',
     }
   })
   .build()

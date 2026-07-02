@@ -1,6 +1,7 @@
 ---
 capability: reviewer-queue
 change: reviewer-queue-start
+synced: 2026-07-02
 ---
 
 # Delta — reviewer-queue

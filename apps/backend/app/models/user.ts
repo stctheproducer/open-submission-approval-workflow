@@ -14,6 +14,13 @@ export default class User extends compose(UserSchema, withAuthFinder(hash)) {
   @hasMany(() => Application)
   declare applications: HasMany<typeof Application>
 
+  @hasMany(() => Application, { foreignKey: 'assignedReviewerId' })
+  declare reviewAssignments: HasMany<typeof Application>
+
+  get isReviewer() {
+    return this.role === 'reviewer'
+  }
+
   get initials() {
     const [first, last] = this.fullName ? this.fullName.split(' ') : this.email.split('@')
     if (first && last) {

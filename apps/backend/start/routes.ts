@@ -47,5 +47,17 @@ router
       .prefix('applicant')
       .as('applicant')
       .use(middleware.auth({ guards: ['web'] }))
+
+    router
+      .group(() => {
+        router.resource('applications', controllers.ReviewerApplications).only(['index', 'show'])
+        router.post('applications/:id/review-starts', [
+          controllers.ApplicationReviewStarts,
+          'store',
+        ])
+      })
+      .prefix('reviewer')
+      .as('reviewer')
+      .use(middleware.auth({ guards: ['web'] }))
   })
   .prefix('/api/v1')

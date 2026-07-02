@@ -127,4 +127,40 @@ export interface Registry {
       errorResponse: ExtractErrorResponse<Awaited<ReturnType<import('#controllers/application_submissions_controller').default['store']>>>
     }
   }
+  'reviewer.applications.index': {
+    methods: ["GET","HEAD"]
+    pattern: '/api/v1/reviewer/applications'
+    types: {
+      body: {}
+      paramsTuple: []
+      params: {}
+      query: {}
+      response: ExtractResponse<Awaited<ReturnType<import('#controllers/reviewer_applications_controller').default['index']>>>
+      errorResponse: ExtractErrorResponse<Awaited<ReturnType<import('#controllers/reviewer_applications_controller').default['index']>>>
+    }
+  }
+  'reviewer.applications.show': {
+    methods: ["GET","HEAD"]
+    pattern: '/api/v1/reviewer/applications/:id'
+    types: {
+      body: {}
+      paramsTuple: [ParamValue]
+      params: { id: ParamValue }
+      query: {}
+      response: ExtractResponse<Awaited<ReturnType<import('#controllers/reviewer_applications_controller').default['show']>>>
+      errorResponse: ExtractErrorResponse<Awaited<ReturnType<import('#controllers/reviewer_applications_controller').default['show']>>>
+    }
+  }
+  'reviewer.applications.review_starts.store': {
+    methods: ["POST"]
+    pattern: '/api/v1/reviewer/applications/:id/review-starts'
+    types: {
+      body: {}
+      paramsTuple: [ParamValue]
+      params: { id: ParamValue }
+      query: {}
+      response: ExtractResponse<Awaited<ReturnType<import('#controllers/application_review_starts_controller').default['store']>>>
+      errorResponse: ExtractErrorResponse<Awaited<ReturnType<import('#controllers/application_review_starts_controller').default['store']>>>
+    }
+  }
 }

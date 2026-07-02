@@ -5,8 +5,10 @@
 
 export const controllers = {
   AccessTokens: () => import('#controllers/access_tokens_controller'),
+  ApplicationReviewStarts: () => import('#controllers/application_review_starts_controller'),
   ApplicationSubmissions: () => import('#controllers/application_submissions_controller'),
   Applications: () => import('#controllers/applications_controller'),
   NewAccount: () => import('#controllers/new_account_controller'),
   Profile: () => import('#controllers/profile_controller'),
+  ReviewerApplications: () => import('#controllers/reviewer_applications_controller'),
 }
