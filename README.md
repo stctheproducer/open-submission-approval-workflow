@@ -255,6 +255,21 @@ Recorded ADRs:
 - `docs/adr/0001-same-origin-session-auth-on-sevalla.md`
 - `docs/adr/0002-explicit-transition-resources-for-application-workflow.md`
 
+## Delivery Workflow
+
+Development in this repo follows a PRD-driven vertical-slice workflow so the project has a visible issue -> PR -> merge trail instead of one opaque implementation drop.
+
+The intended flow is:
+
+1. create a PRD issue for a major assessment concern
+2. split that PRD into thin vertical-slice implementation issues
+3. implement one slice per branch
+4. open a PR for the slice
+5. require human review before merge
+6. merge only once the slice is correct, tested, and documented
+
+This approach is deliberate for the assessment. It keeps scope under control, produces a readable delivery history, and makes workflow, authorization, and testing decisions easier to review incrementally.
+
 ## Trade-offs
 
 These are deliberate trade-offs for the exercise:
