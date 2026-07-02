@@ -1,0 +1,9 @@
+.git
+.turbo
+node_modules
+apps/*/node_modules
+apps/frontend
+apps/frontend-starter
+docs
+scripts
+*.log

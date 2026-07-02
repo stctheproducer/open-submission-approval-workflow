@@ -1,0 +1,39 @@
+# For more information: https://github.com/julien-r44/adonis-sail
+services:
+  pgsql:
+    image: 'postgres:18'
+    ports:
+      - '${DB_PORT:-5432}:5432'
+    environment:
+      PGPASSWORD: '${DB_PASSWORD:-secret}'
+      POSTGRES_DB: '${DB_DATABASE:-default}'
+      POSTGRES_USER: '${DB_USER}'
+      POSTGRES_PASSWORD: '${DB_PASSWORD:-secret}'
+    volumes:
+      - 'sailpgsql:/var/lib/postgresql'
+    networks:
+      - sail
+    healthcheck:
+      test: ['CMD', 'pg_isready', '-q', '-d', '${DB_DATABASE:-default}', '-U', '${DB_USER}']
+      retries: 3
+      timeout: 5s
+
+  mailpit:
+    image: 'axllent/mailpit:latest'
+    ports:
+      - '${FORWARD_MAILPIT_PORT:-1025}:1025'
+      - '${FORWARD_MAILPIT_DASHBOARD_PORT:-8025}:8025'
+    networks:
+      - sail
+    healthcheck:
+      test: ['CMD', 'curl', '-f', 'http://localhost:8025/livez']
+      interval: 30s
+      timeout: 10s
+      retries: 5
+
+networks:
+  sail:
+    driver: bridge
+
+volumes:
+  sailpgsql:

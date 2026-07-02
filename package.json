@@ -1,0 +1,33 @@
+{
+  "name": "open-submission-approval-workflow",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "description": "A batteries-included AdonisJS starter kit for building modern APIs with type-safe frontend integration",
+  "license": "MIT",
+  "engines": {
+    "node": ">=24.0.0"
+  },
+  "scripts": {
+    "setup": "bash scripts/setup-backend-env.sh",
+    "db:up": "docker compose -f apps/backend/compose.yml up -d pgsql mailpit",
+    "db:down": "docker compose -f apps/backend/compose.yml down",
+    "db:logs": "docker compose -f apps/backend/compose.yml logs -f pgsql mailpit",
+    "db:migrate": "pnpm --dir apps/backend run db:migrate",
+    "db:seed": "pnpm --dir apps/backend run db:seed",
+    "db:status": "pnpm --dir apps/backend exec node ace migration:status",
+    "dev": "turbo dev",
+    "build": "turbo build",
+    "test": "turbo test",
+    "lint": "turbo lint",
+    "format": "turbo format",
+    "typecheck": "turbo typecheck"
+  },
+  "devDependencies": {
+    "@adonisjs/prettier-config": "^1.5.0",
+    "prettier": "^3.8.3",
+    "turbo": "^2.9.16"
+  },
+  "packageManager": "pnpm@11.3.0",
+  "prettier": "@adonisjs/prettier-config"
+}

@@ -1,0 +1,10 @@
+build
+node_modules
+.adonisjs
+tmp
+.flow/docs/
+.cursor/skills/flow-*
+.cursor/rules/adonisjs-harness.mdc
+.agents/skills/flow-*
+.opencode/skills/flow-*
+.opencode/commands/flow-*
