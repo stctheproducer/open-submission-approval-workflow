@@ -55,8 +55,9 @@ This repo uses a single shared domain context with one root `CONTEXT.md` and roo
 
 ## Deployment rules
 
-- Production targets Sevalla with two separate processes behind one public origin and path-based routing: `/` to the frontend and `/api/*` to the AdonisJS backend.
-- Session auth is the default production auth model. Frontend requests should use same-origin cookie-based sessions from day one.
+- Production targets Sevalla with the backend on an `api` subdomain and the frontend on the main app domain.
+- Sevalla redirects should proxy `/api` requests from the frontend app to the backend service.
+- Session auth is the default production auth model. The frontend talks to the backend with cookie-based sessions, and the backend must be configured with explicit production CORS for the frontend origin.
 - The backend is deployed as a containerized AdonisJS app. The frontend is deployed as a static site build. PostgreSQL is managed.
 
 ## Commit and PR rules
