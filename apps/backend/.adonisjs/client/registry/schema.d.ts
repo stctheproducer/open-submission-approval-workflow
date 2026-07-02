@@ -139,18 +139,6 @@ export interface Registry {
       errorResponse: ExtractErrorResponse<Awaited<ReturnType<import('#controllers/application_draft_reopenings_controller').default['store']>>>
     }
   }
-  'reviewer.applications.rejections.store': {
-    methods: ["POST"]
-    pattern: '/api/v1/reviewer/applications/:application_id/rejections'
-    types: {
-      body: ExtractBody<InferInput<(typeof import('#validators/application_rejection').rejectApplicationValidator)>>
-      paramsTuple: [ParamValue]
-      params: { application_id: ParamValue }
-      query: {}
-      response: ExtractResponse<Awaited<ReturnType<import('#controllers/application_rejections_controller').default['store']>>>
-      errorResponse: ExtractErrorResponse<Awaited<ReturnType<import('#controllers/application_rejections_controller').default['store']>>> | { status: 422; response: { errors: SimpleError[] } }
-    }
-  }
   'reviewer.applications.index': {
     methods: ["GET","HEAD"]
     pattern: '/api/v1/reviewer/applications'
@@ -158,9 +146,9 @@ export interface Registry {
       body: {}
       paramsTuple: []
       params: {}
-      query: {}
+      query: ExtractQueryForGet<InferInput<(typeof import('#validators/reviewer_application').reviewerApplicationsIndexValidator)>>
       response: ExtractResponse<Awaited<ReturnType<import('#controllers/reviewer_applications_controller').default['index']>>>
-      errorResponse: ExtractErrorResponse<Awaited<ReturnType<import('#controllers/reviewer_applications_controller').default['index']>>>
+      errorResponse: ExtractErrorResponse<Awaited<ReturnType<import('#controllers/reviewer_applications_controller').default['index']>>> | { status: 422; response: { errors: SimpleError[] } }
     }
   }
   'reviewer.applications.show': {
@@ -175,7 +163,7 @@ export interface Registry {
       errorResponse: ExtractErrorResponse<Awaited<ReturnType<import('#controllers/reviewer_applications_controller').default['show']>>>
     }
   }
-  'reviewer.applications.review_starts.store': {
+  'reviewer.application_review_starts.store': {
     methods: ["POST"]
     pattern: '/api/v1/reviewer/applications/:id/review-starts'
     types: {
@@ -206,9 +194,21 @@ export interface Registry {
       body: ExtractBody<InferInput<(typeof import('#validators/application_change_request').requestApplicationChangeValidator)>>
       paramsTuple: [ParamValue]
       params: { id: ParamValue }
-      query: {}
+      query: ExtractQuery<InferInput<(typeof import('#validators/application_change_request').requestApplicationChangeValidator)>>
       response: ExtractResponse<Awaited<ReturnType<import('#controllers/application_change_requests_controller').default['store']>>>
       errorResponse: ExtractErrorResponse<Awaited<ReturnType<import('#controllers/application_change_requests_controller').default['store']>>> | { status: 422; response: { errors: SimpleError[] } }
+    }
+  }
+  'reviewer.application_rejections.store': {
+    methods: ["POST"]
+    pattern: '/api/v1/reviewer/applications/:application_id/rejections'
+    types: {
+      body: ExtractBody<InferInput<(typeof import('#validators/application_rejection').rejectApplicationValidator)>>
+      paramsTuple: [ParamValue]
+      params: { application_id: ParamValue }
+      query: ExtractQuery<InferInput<(typeof import('#validators/application_rejection').rejectApplicationValidator)>>
+      response: ExtractResponse<Awaited<ReturnType<import('#controllers/application_rejections_controller').default['store']>>>
+      errorResponse: ExtractErrorResponse<Awaited<ReturnType<import('#controllers/application_rejections_controller').default['store']>>> | { status: 422; response: { errors: SimpleError[] } }
     }
   }
 }

@@ -23,4 +23,36 @@ export interface ApiDefinition {
       destroy: typeof routes['profile.access_tokens.destroy']
     }
   }
+  applicant: {
+    applications: {
+      index: typeof routes['applicant.applications.index']
+      store: typeof routes['applicant.applications.store']
+      show: typeof routes['applicant.applications.show']
+      update: typeof routes['applicant.applications.update']
+      submissions: {
+        store: typeof routes['applicant.applications.submissions.store']
+      }
+    }
+    applicationDraftReopenings: {
+      store: typeof routes['applicant.application_draft_reopenings.store']
+    }
+  }
+  reviewer: {
+    applications: {
+      index: typeof routes['reviewer.applications.index']
+      show: typeof routes['reviewer.applications.show']
+    }
+    applicationReviewStarts: {
+      store: typeof routes['reviewer.application_review_starts.store']
+    }
+    applicationApprovals: {
+      store: typeof routes['reviewer.application_approvals.store']
+    }
+    applicationChangeRequests: {
+      store: typeof routes['reviewer.application_change_requests.store']
+    }
+    applicationRejections: {
+      store: typeof routes['reviewer.application_rejections.store']
+    }
+  }
 }

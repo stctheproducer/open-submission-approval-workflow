@@ -1,20 +1,33 @@
-import { Button } from "@/components/ui/button"
+import { Route, Routes } from "react-router"
 
-export function App() {
+import { LoginPage } from "@/pages/login-page"
+import type { Role } from "@/routing/access-policy"
+import { ApplicantGuard, LandingRoute, ReviewerGuard } from "@/routing/access-policy"
+
+type AppProps = {
+  currentRole?: Role
+}
+
+function ApplicantHome() {
+  return <section>Applicant area</section>
+}
+
+function ReviewerHome() {
+  return <section>Reviewer area</section>
+}
+
+export function App({ currentRole = null }: AppProps) {
   return (
-    <div className="flex min-h-svh p-6">
-      <div className="flex max-w-md min-w-0 flex-col gap-4 text-sm leading-loose">
-        <div>
-          <h1 className="font-medium">Project ready!</h1>
-          <p>You may now add components and start building.</p>
-          <p>We&apos;ve already added the button component for you.</p>
-          <Button className="mt-2">Button</Button>
-        </div>
-        <div className="font-mono text-xs text-muted-foreground">
-          (Press <kbd>d</kbd> to toggle dark mode)
-        </div>
-      </div>
-    </div>
+    <Routes>
+      <Route path="/" element={<LandingRoute currentRole={currentRole} />} />
+      <Route path="/login" element={<LoginPage />} />
+      <Route element={<ApplicantGuard currentRole={currentRole} />}>
+        <Route path="/applicant" element={<ApplicantHome />} />
+      </Route>
+      <Route element={<ReviewerGuard currentRole={currentRole} />}>
+        <Route path="/reviewer" element={<ReviewerHome />} />
+      </Route>
+    </Routes>
   )
 }
 

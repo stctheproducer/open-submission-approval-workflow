@@ -32,7 +32,7 @@ router
       })
       .prefix('account')
       .as('profile')
-      .use(middleware.auth())
+      .use(middleware.auth({ guards: ['web'] }))
 
     router
       .group(() => {

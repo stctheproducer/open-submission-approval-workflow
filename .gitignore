@@ -37,3 +37,5 @@ public/assets
 .agents/skills/flow-*
 .opencode/skills/flow-*
 .opencode/commands/flow-*
+
+.pnpm-store

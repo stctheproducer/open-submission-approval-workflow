@@ -1,4 +1,16 @@
 tasks:
+  - name: session-login-seed
+    description: Let an applicant and reviewer sign in through the shared session access path.
+    track: brief
+  - name: role-based-landing-guards
+    description: Let signed-in users land in the area that matches their role.
+    track: brief
+  - name: workflow-authorization-hardening
+    description: Enforce applicant ownership and reviewer assignment across workflow actions.
+    track: brief
+  - name: error-contract-proofing
+    description: Prove shared error responses for workflow and access failures.
+    track: brief
   - name: application-draft-ownership
     description: Let an applicant create, view, and edit their own draft application.
     track: brief

@@ -44,7 +44,8 @@ This section will be updated once the project is deployed on Sevalla.
 - **Backend**: AdonisJS 7, Lucid ORM, PostgreSQL, session auth, Bouncer, Drive, VineJS, Tuyau
 - **Backend workflow support**: AdonisJS Plus Flow during development
 - **Frontend**: React + Vite + TypeScript + shadcn/ui
-- **Frontend data layer**: `@tuyau/react-query`
+- **Frontend data layer**: `@tuyau/react-query` with a base URL that defaults to `/api`
+- **Cross-origin support**: backend CORS is enabled for the frontend origin in production
 - **Database**: PostgreSQL
 - **Local infrastructure**: Docker Compose for PostgreSQL and Mailpit
 - **Hosting target**: Sevalla
@@ -53,20 +54,19 @@ This section will be updated once the project is deployed on Sevalla.
 
 ```mermaid
 flowchart LR
-  U["User Browser"] --> LB["Sevalla Load Balancer"]
-  LB --> FE["Frontend Static Site (apps/frontend)"]
-  LB --> BE["AdonisJS Backend (apps/backend)"]
+  U["User Browser"] --> FE["Frontend Static Site (apps/frontend)"]
+  U["User Browser"] --> BE["AdonisJS Backend (apps/backend)"]
+  FE -->|"/api" redirects| BE
   BE --> DB["Managed PostgreSQL"]
   BE --> FS["Persistent File Storage"]
 ```
 
 Deployment shape:
 
-- one public app URL
-- path-based routing
-- `/` goes to the frontend
-- `/api/*` goes to the backend
-- session cookies are same-origin
+- backend on an `api` subdomain
+- frontend on the main app domain
+- Sevalla redirects proxy `/api` requests from the frontend app to the backend service
+- session auth uses cookie-based requests between the browser and backend
 
 ## Local Setup
 
@@ -203,7 +203,7 @@ This was chosen to make:
 
 ## Authorization Model
 
-The app uses **session authentication** because frontend and backend share one public origin in production.
+The app uses **session authentication** because the browser talks to the backend through cookie-based requests, with the frontend served on the main app domain and the backend served from the `api` subdomain.
 
 Current planned model:
 
@@ -225,6 +225,8 @@ Target behavior:
 - not-found errors return structured not-found responses
 - illegal workflow transitions return `409 Conflict`
 
+Frontend requests use the browser session cookie, so the production backend must allow the frontend origin through CORS even though the frontend API client defaults to the proxied `/api` path in production.
+
 ## Testing Strategy
 
 The test strategy is intentionally backend-heavy because that is where the assessment risk is concentrated.
@@ -244,7 +246,7 @@ Target deployment:
 
 - **Backend**: containerized AdonisJS app on Sevalla
 - **Frontend**: static site deployment on Sevalla
-- **Routing**: one public origin behind a Sevalla load balancer
+- **Routing**: backend on an `api` subdomain, frontend on the main app domain, with Sevalla redirects proxying `/api` to the backend
 - **Database**: managed PostgreSQL
 
 The backend Dockerfile lives at `apps/backend/Dockerfile`.
