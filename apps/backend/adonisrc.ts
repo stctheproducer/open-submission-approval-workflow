@@ -32,7 +32,7 @@ export default defineConfig({
     () => import('@adonisplus/flow/commands'),
     () => import('@adonisjs/bouncer/commands'),
     () => import('adonis-sail/commands'),
-    () => import('@adonisjs/mail/commands')
+    () => import('@adonisjs/mail/commands'),
   ],
 
   /*
@@ -64,7 +64,7 @@ export default defineConfig({
     },
     () => import('@adonisjs/bouncer/bouncer_provider'),
     () => import('@adonisjs/drive/drive_provider'),
-    () => import('@adonisjs/mail/mail_provider')
+    () => import('@adonisjs/mail/mail_provider'),
   ],
 
   /*
@@ -123,7 +123,7 @@ export default defineConfig({
         transformers: { enabled: true },
       }),
       generateRegistry(),
-      indexPolicies()
+      indexPolicies(),
     ],
   },
 })

@@ -33,5 +33,16 @@ router
       .prefix('account')
       .as('profile')
       .use(middleware.auth())
+
+    router
+      .group(() => {
+        router
+          .resource('applications', controllers.Applications)
+          .apiOnly()
+          .only(['index', 'store', 'show', 'update'])
+      })
+      .prefix('applicant')
+      .as('applicant')
+      .use(middleware.auth({ guards: ['web'] }))
   })
   .prefix('/api/v1')

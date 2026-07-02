@@ -1,0 +1,25 @@
+tasks:
+  - name: application-draft-ownership
+    description: Let an applicant create, view, and edit their own draft application.
+    track: brief
+  - name: application-submission-history
+    description: Let an applicant submit a draft application and see that submission in history.
+    track: brief
+  - name: reviewer-queue-start
+    description: Let a reviewer see queued work and start owned review.
+    track: brief
+  - name: application-approval
+    description: Let an assigned reviewer approve an application under review.
+    track: brief
+  - name: application-rejection-comment
+    description: Let an assigned reviewer reject with a required comment.
+    track: brief
+  - name: application-change-request
+    description: Let a reviewer return an application for changes with a comment.
+    track: brief
+  - name: application-draft-reopening
+    description: Let an applicant reopen a returned application back to draft.
+    track: brief
+  - name: workflow-conflicts
+    description: Make illegal workflow transitions return consistent conflict behavior.
+    track: brief

@@ -36,6 +36,30 @@ const routes = {
     tokens: [{"old":"/api/v1/account/logout","type":0,"val":"api","end":""},{"old":"/api/v1/account/logout","type":0,"val":"v1","end":""},{"old":"/api/v1/account/logout","type":0,"val":"account","end":""},{"old":"/api/v1/account/logout","type":0,"val":"logout","end":""}],
     types: placeholder as Registry['profile.access_tokens.destroy']['types'],
   },
+  'applicant.applications.index': {
+    methods: ["GET","HEAD"],
+    pattern: '/api/v1/applicant/applications',
+    tokens: [{"old":"/api/v1/applicant/applications","type":0,"val":"api","end":""},{"old":"/api/v1/applicant/applications","type":0,"val":"v1","end":""},{"old":"/api/v1/applicant/applications","type":0,"val":"applicant","end":""},{"old":"/api/v1/applicant/applications","type":0,"val":"applications","end":""}],
+    types: placeholder as Registry['applicant.applications.index']['types'],
+  },
+  'applicant.applications.store': {
+    methods: ["POST"],
+    pattern: '/api/v1/applicant/applications',
+    tokens: [{"old":"/api/v1/applicant/applications","type":0,"val":"api","end":""},{"old":"/api/v1/applicant/applications","type":0,"val":"v1","end":""},{"old":"/api/v1/applicant/applications","type":0,"val":"applicant","end":""},{"old":"/api/v1/applicant/applications","type":0,"val":"applications","end":""}],
+    types: placeholder as Registry['applicant.applications.store']['types'],
+  },
+  'applicant.applications.show': {
+    methods: ["GET","HEAD"],
+    pattern: '/api/v1/applicant/applications/:id',
+    tokens: [{"old":"/api/v1/applicant/applications/:id","type":0,"val":"api","end":""},{"old":"/api/v1/applicant/applications/:id","type":0,"val":"v1","end":""},{"old":"/api/v1/applicant/applications/:id","type":0,"val":"applicant","end":""},{"old":"/api/v1/applicant/applications/:id","type":0,"val":"applications","end":""},{"old":"/api/v1/applicant/applications/:id","type":1,"val":"id","end":""}],
+    types: placeholder as Registry['applicant.applications.show']['types'],
+  },
+  'applicant.applications.update': {
+    methods: ["PUT","PATCH"],
+    pattern: '/api/v1/applicant/applications/:id',
+    tokens: [{"old":"/api/v1/applicant/applications/:id","type":0,"val":"api","end":""},{"old":"/api/v1/applicant/applications/:id","type":0,"val":"v1","end":""},{"old":"/api/v1/applicant/applications/:id","type":0,"val":"applicant","end":""},{"old":"/api/v1/applicant/applications/:id","type":0,"val":"applications","end":""},{"old":"/api/v1/applicant/applications/:id","type":1,"val":"id","end":""}],
+    types: placeholder as Registry['applicant.applications.update']['types'],
+  },
 } as const satisfies Record<string, AdonisEndpoint>
 
 export { routes }

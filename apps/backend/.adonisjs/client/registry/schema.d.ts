@@ -67,4 +67,52 @@ export interface Registry {
       errorResponse: ExtractErrorResponse<Awaited<ReturnType<import('#controllers/access_tokens_controller').default['destroy']>>>
     }
   }
+  'applicant.applications.index': {
+    methods: ["GET","HEAD"]
+    pattern: '/api/v1/applicant/applications'
+    types: {
+      body: {}
+      paramsTuple: []
+      params: {}
+      query: {}
+      response: ExtractResponse<Awaited<ReturnType<import('#controllers/applications_controller').default['index']>>>
+      errorResponse: ExtractErrorResponse<Awaited<ReturnType<import('#controllers/applications_controller').default['index']>>>
+    }
+  }
+  'applicant.applications.store': {
+    methods: ["POST"]
+    pattern: '/api/v1/applicant/applications'
+    types: {
+      body: ExtractBody<InferInput<(typeof import('#validators/application').createApplicationValidator)>>
+      paramsTuple: []
+      params: {}
+      query: ExtractQuery<InferInput<(typeof import('#validators/application').createApplicationValidator)>>
+      response: ExtractResponse<Awaited<ReturnType<import('#controllers/applications_controller').default['store']>>>
+      errorResponse: ExtractErrorResponse<Awaited<ReturnType<import('#controllers/applications_controller').default['store']>>> | { status: 422; response: { errors: SimpleError[] } }
+    }
+  }
+  'applicant.applications.show': {
+    methods: ["GET","HEAD"]
+    pattern: '/api/v1/applicant/applications/:id'
+    types: {
+      body: {}
+      paramsTuple: [ParamValue]
+      params: { id: ParamValue }
+      query: {}
+      response: ExtractResponse<Awaited<ReturnType<import('#controllers/applications_controller').default['show']>>>
+      errorResponse: ExtractErrorResponse<Awaited<ReturnType<import('#controllers/applications_controller').default['show']>>>
+    }
+  }
+  'applicant.applications.update': {
+    methods: ["PUT","PATCH"]
+    pattern: '/api/v1/applicant/applications/:id'
+    types: {
+      body: ExtractBody<InferInput<(typeof import('#validators/application').updateApplicationValidator)>>
+      paramsTuple: [ParamValue]
+      params: { id: ParamValue }
+      query: ExtractQuery<InferInput<(typeof import('#validators/application').updateApplicationValidator)>>
+      response: ExtractResponse<Awaited<ReturnType<import('#controllers/applications_controller').default['update']>>>
+      errorResponse: ExtractErrorResponse<Awaited<ReturnType<import('#controllers/applications_controller').default['update']>>> | { status: 422; response: { errors: SimpleError[] } }
+    }
+  }
 }
