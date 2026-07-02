@@ -1,6 +1,7 @@
 ---
 capability: application-draft-reopening
 change: application-draft-reopening
+synced: 2026-07-02
 ---
 
 # Delta — application-draft-reopening

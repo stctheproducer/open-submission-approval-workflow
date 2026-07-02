@@ -43,6 +43,7 @@ router
         router
           .resource('applications.submissions', controllers.ApplicationSubmissions)
           .only(['store'])
+        router.post('applications/:id/reopen', [controllers.ApplicationDraftReopenings, 'store'])
       })
       .prefix('applicant')
       .as('applicant')

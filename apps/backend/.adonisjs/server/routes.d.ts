@@ -30,6 +30,7 @@ export type ScannedRoutes = {
     'profile.access_tokens.destroy': { paramsTuple?: []; params?: {} }
     'applicant.applications.store': { paramsTuple?: []; params?: {} }
     'applicant.applications.submissions.store': { paramsTuple: [ParamValue]; params: { application_id: ParamValue } }
+    'applicant.application_draft_reopenings.store': { paramsTuple: [ParamValue]; params: { id: ParamValue } }
     'reviewer.application_approvals.store': { paramsTuple: [ParamValue]; params: { applicationId: ParamValue } }
     'reviewer.application_change_requests.store': { paramsTuple: [ParamValue]; params: { id: ParamValue } }
     'reviewer.applications.review_starts.store': { paramsTuple: [ParamValue]; params: { id: ParamValue } }

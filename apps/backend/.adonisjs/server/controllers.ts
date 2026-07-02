@@ -7,6 +7,7 @@ export const controllers = {
   AccessTokens: () => import('#controllers/access_tokens_controller'),
   ApplicationApprovals: () => import('#controllers/application_approvals_controller'),
   ApplicationChangeRequests: () => import('#controllers/application_change_requests_controller'),
+  ApplicationDraftReopenings: () => import('#controllers/application_draft_reopenings_controller'),
   ApplicationReviewStarts: () => import('#controllers/application_review_starts_controller'),
   ApplicationSubmissions: () => import('#controllers/application_submissions_controller'),
   Applications: () => import('#controllers/applications_controller'),

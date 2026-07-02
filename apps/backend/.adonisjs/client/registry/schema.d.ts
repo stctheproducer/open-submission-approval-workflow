@@ -127,6 +127,18 @@ export interface Registry {
       errorResponse: ExtractErrorResponse<Awaited<ReturnType<import('#controllers/application_submissions_controller').default['store']>>>
     }
   }
+  'applicant.application_draft_reopenings.store': {
+    methods: ["POST"]
+    pattern: '/api/v1/applicant/applications/:id/reopen'
+    types: {
+      body: {}
+      paramsTuple: [ParamValue]
+      params: { id: ParamValue }
+      query: {}
+      response: ExtractResponse<Awaited<ReturnType<import('#controllers/application_draft_reopenings_controller').default['store']>>>
+      errorResponse: ExtractErrorResponse<Awaited<ReturnType<import('#controllers/application_draft_reopenings_controller').default['store']>>>
+    }
+  }
   'reviewer.applications.index': {
     methods: ["GET","HEAD"]
     pattern: '/api/v1/reviewer/applications'
