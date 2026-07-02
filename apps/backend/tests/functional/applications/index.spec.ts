@@ -4,7 +4,7 @@ import { UserFactory } from '#database/factories/user_factory'
 import { ApplicationFactory } from '#database/factories/application_factory'
 
 test.group('Applications index', (group) => {
-  group.each.setup(() => testUtils.db().truncate())
+  group.each.setup(() => testUtils.db('test').truncate())
 
   test('rejects unauthenticated requests to the applications index (401)', async ({ client }) => {
     const response = await client.visit('applicant.applications.index')

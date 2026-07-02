@@ -9,7 +9,7 @@ import { ApplicationStatus } from '#values/application_status'
 const NON_EXISTENT_ID = 99999999
 
 test.group('Applications show', (group) => {
-  group.each.setup(() => testUtils.db().truncate())
+  group.each.setup(() => testUtils.db('test').truncate())
 
   test('rejects unauthenticated requests to view an application (401)', async ({ client }) => {
     const application = await ApplicationFactory.create()

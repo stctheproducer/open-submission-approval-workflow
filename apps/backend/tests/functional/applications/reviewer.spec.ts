@@ -13,7 +13,7 @@ async function createReviewer() {
 }
 
 test.group('Reviewer applications', (group) => {
-  group.each.setup(() => testUtils.db().truncate())
+  group.each.setup(() => testUtils.db('test').truncate())
 
   test('rejects unauthenticated requests to the reviewer queue (401)', async ({ client }) => {
     const response = await client.visit('reviewer.applications.index')

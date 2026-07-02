@@ -3,7 +3,7 @@ import testUtils from '@adonisjs/core/services/test_utils'
 import { UserFactory } from '#database/factories/user_factory'
 
 test.group('Applications store', (group) => {
-  group.each.setup(() => testUtils.db().truncate())
+  group.each.setup(() => testUtils.db('test').truncate())
 
   test('creates a blank draft application for the authenticated applicant and returns the wrapped resource (201)', async ({
     client,

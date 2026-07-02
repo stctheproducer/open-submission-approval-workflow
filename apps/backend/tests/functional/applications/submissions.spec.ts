@@ -5,7 +5,7 @@ import { ApplicationFactory } from '#database/factories/application_factory'
 import { ApplicationStatus } from '#values/application_status'
 
 test.group('Application submissions', (group) => {
-  group.each.setup(() => testUtils.db().truncate())
+  group.each.setup(() => testUtils.db('test').truncate())
 
   test('rejects unauthenticated requests to submit an application (401)', async ({ client }) => {
     const application = await ApplicationFactory.create()
