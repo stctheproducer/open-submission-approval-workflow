@@ -35,7 +35,7 @@ const dbConfig = defineConfig({
       client: 'pg',
       connection: {
         host: env.get('DB_HOST'),
-        port: Number(env.get('DB_PORT', '5432')),
+        port: 5433,
         user: env.get('DB_USER'),
         password: env.get('DB_PASSWORD'),
         database: env.get('DB_DATABASE'),
@@ -44,7 +44,7 @@ const dbConfig = defineConfig({
         naturalSort: true,
         paths: ['database/migrations'],
       },
-      debug: app.inDev,
+      debug: app.inTest,
     },
 
     /**
