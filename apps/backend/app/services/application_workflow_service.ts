@@ -2,7 +2,6 @@ import db from '@adonisjs/lucid/services/db'
 import Application from '#models/application'
 import User from '#models/user'
 import { ApplicationStatus } from '#values/application_status'
-import ApplicationChangeRequestConflictException from '#exceptions/application_change_request_conflict_exception'
 import ApplicationAuditEntry from '#models/application_audit_entry'
 import ApplicationTransitionConflictException from '#exceptions/application_transition_conflict_exception'
 
@@ -13,7 +12,7 @@ export default class ApplicationWorkflowService {
       locked.useTransaction(trx)
 
       if (locked.status !== ApplicationStatus.CHANGES_REQUESTED) {
-        throw new ApplicationChangeRequestConflictException()
+        throw new ApplicationTransitionConflictException()
       }
 
       locked.status = ApplicationStatus.DRAFT
@@ -47,7 +46,7 @@ export default class ApplicationWorkflowService {
       locked.useTransaction(trx)
 
       if (locked.status !== ApplicationStatus.UNDER_REVIEW) {
-        throw new ApplicationChangeRequestConflictException()
+        throw new ApplicationTransitionConflictException()
       }
 
       locked.status = ApplicationStatus.CHANGES_REQUESTED

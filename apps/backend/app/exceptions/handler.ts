@@ -13,6 +13,20 @@ export default class HttpExceptionHandler extends ExceptionHandler {
    * response to the client
    */
   async handle(error: unknown, ctx: HttpContext) {
+    const status =
+      typeof error === 'object' && error && 'status' in error && typeof error.status === 'number'
+        ? error.status
+        : null
+
+    if (status && [400, 401, 403, 404, 409, 422].includes(status)) {
+      const message =
+        typeof error === 'object' && error && 'message' in error && typeof error.message === 'string'
+          ? error.message
+          : 'Request failed'
+
+      return ctx.response.status(status).send({ errors: [{ message }] })
+    }
+
     return super.handle(error, ctx)
   }
 

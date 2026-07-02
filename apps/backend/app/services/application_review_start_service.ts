@@ -3,22 +3,14 @@ import Application from '#models/application'
 import ApplicationAuditLogEntry from '#models/application_audit_log_entry'
 import type User from '#models/user'
 import { ApplicationStatus } from '#values/application_status'
-import ApplicationReviewTransitionConflictException from '#exceptions/application_review_transition_conflict_exception'
+import ApplicationTransitionConflictException from '#exceptions/application_transition_conflict_exception'
 
 export default class ApplicationReviewStartService {
   async start(applicationId: number, reviewer: User) {
-    const application = await Application.query().where('id', applicationId).firstOrFail()
-
-    if (application.status !== ApplicationStatus.SUBMITTED || application.assignedReviewerId) {
-      throw new ApplicationReviewTransitionConflictException()
-    }
-
     await db.transaction(async (trx) => {
-      const locked = await Application.query({ client: trx })
-        .where('id', applicationId)
-        .firstOrFail()
+      const locked = await Application.findOrFail(applicationId, { client: trx })
       if (locked.status !== ApplicationStatus.SUBMITTED || locked.assignedReviewerId) {
-        throw new ApplicationReviewTransitionConflictException()
+        throw new ApplicationTransitionConflictException()
       }
 
       locked.useTransaction(trx)

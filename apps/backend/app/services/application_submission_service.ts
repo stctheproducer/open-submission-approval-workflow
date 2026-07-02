@@ -7,18 +7,20 @@ import ApplicationTransitionConflictException from '#exceptions/application_tran
 
 export default class ApplicationSubmissionService {
   async submit(application: Application, actor: User) {
-    if (application.status !== ApplicationStatus.DRAFT) {
-      throw new ApplicationTransitionConflictException()
-    }
-
     await db.transaction(async (trx) => {
-      application.useTransaction(trx)
-      application.status = ApplicationStatus.SUBMITTED
-      await application.save()
+      const locked = await Application.findOrFail(application.id, { client: trx })
+      locked.useTransaction(trx)
+
+      if (locked.status !== ApplicationStatus.DRAFT) {
+        throw new ApplicationTransitionConflictException()
+      }
+
+      locked.status = ApplicationStatus.SUBMITTED
+      await locked.save()
 
       const entry = new ApplicationAuditLogEntry()
       entry.useTransaction(trx)
-      entry.applicationId = application.id
+      entry.applicationId = locked.id
       entry.actorUserId = actor.id
       entry.previousStatus = ApplicationStatus.DRAFT
       entry.nextStatus = ApplicationStatus.SUBMITTED
