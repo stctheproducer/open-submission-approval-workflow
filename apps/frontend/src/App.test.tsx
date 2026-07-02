@@ -1,66 +1,32 @@
-import { QueryClient, QueryClientProvider } from "@tanstack/react-query"
 import { cleanup, render, screen } from "@testing-library/react"
 import { MemoryRouter } from "react-router"
-import { afterEach, beforeEach, describe, expect, it, vi } from "vitest"
+import { afterEach, describe, expect, it } from "vitest"
 
 import App from "./App"
 import { ThemeProvider } from "@/components/theme-provider"
 
-function createTestQueryClient() {
-  return new QueryClient({
-    defaultOptions: {
-      queries: {
-        retry: false,
-      },
-    },
-  })
-}
-
 function renderAt(path: string) {
-  const queryClient = createTestQueryClient()
-
   return render(
-    <QueryClientProvider client={queryClient}>
-      <ThemeProvider>
-        <MemoryRouter initialEntries={[path]}>
-          <App />
-        </MemoryRouter>
-      </ThemeProvider>
-    </QueryClientProvider>,
+    <ThemeProvider>
+      <MemoryRouter initialEntries={[path]}>
+        <App />
+      </MemoryRouter>
+    </ThemeProvider>,
   )
 }
 
 function renderWithRole(path: string, currentRole: "applicant" | "reviewer") {
-  const queryClient = createTestQueryClient()
-
   return render(
-    <QueryClientProvider client={queryClient}>
-      <ThemeProvider>
-        <MemoryRouter initialEntries={[path]}>
-          <App currentRole={currentRole} />
-        </MemoryRouter>
-      </ThemeProvider>
-    </QueryClientProvider>,
+    <ThemeProvider>
+      <MemoryRouter initialEntries={[path]}>
+        <App currentRole={currentRole} />
+      </MemoryRouter>
+    </ThemeProvider>,
   )
 }
 
-beforeEach(() => {
-  vi.stubGlobal(
-    "fetch",
-    vi.fn(async () => {
-      return new Response(JSON.stringify({ message: "Unauthorized" }), {
-        status: 401,
-        headers: {
-          "Content-Type": "application/json",
-        },
-      })
-    }) as typeof fetch,
-  )
-})
-
 afterEach(() => {
   cleanup()
-  vi.unstubAllGlobals()
 })
 
 describe("App routing", () => {
@@ -87,7 +53,6 @@ describe("App routing", () => {
     ).toBeInTheDocument()
     expect(screen.getByLabelText("Work email")).toBeInTheDocument()
     expect(screen.getByLabelText("Password")).toBeInTheDocument()
-    expect(screen.getByText("Session status")).toBeInTheDocument()
   })
 
   it("keeps an applicant out of the reviewer area", () => {
@@ -98,11 +63,9 @@ describe("App routing", () => {
     ).toBeInTheDocument()
   })
 
-  it("shows the session probe fallback when the profile request is unauthorized", async () => {
+  it("does not render the removed session status card", () => {
     renderAt("/")
 
-    expect(
-      await screen.findByText(/No active session yet/i),
-    ).toBeInTheDocument()
+    expect(screen.queryByText("Session status")).not.toBeInTheDocument()
   })
 })

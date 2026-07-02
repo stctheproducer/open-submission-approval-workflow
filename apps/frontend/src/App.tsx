@@ -1,6 +1,5 @@
 import { Navigate, Outlet, Route, Routes } from "react-router"
 
-import { SessionStatusCard } from "@/components/session-status-card"
 import loginIllustration from "@/assets/login-illustration.svg"
 
 type Role = "applicant" | "reviewer" | null
@@ -116,8 +115,6 @@ function LoginPage() {
                 </button>
               </form>
             </div>
-
-            <SessionStatusCard />
           </div>
         </section>
       </div>
