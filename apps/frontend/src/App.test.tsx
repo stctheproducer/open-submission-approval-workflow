@@ -1,4 +1,4 @@
-import { cleanup, render, screen } from "@testing-library/react"
+import { cleanup, fireEvent, render, screen } from "@testing-library/react"
 import { MemoryRouter } from "react-router"
 import { afterEach, describe, expect, it } from "vitest"
 
@@ -46,20 +46,36 @@ describe("App routing", () => {
     renderAt("/")
 
     expect(
-      screen.getByRole("heading", { name: "Welcome back" }),
+      screen.getByRole("heading", { name: "Sign in to continue." }),
     ).toBeInTheDocument()
     expect(
-      screen.getByRole("img", { name: "Illustration of the approval workflow login experience" }),
+      screen.getByRole("img", { name: "A preview of the application workspace" }),
     ).toBeInTheDocument()
     expect(screen.getByLabelText("Work email")).toBeInTheDocument()
     expect(screen.getByLabelText("Password")).toBeInTheDocument()
+    expect(
+      screen.getByRole("button", { name: "Switch theme, current system theme" }),
+    ).toBeInTheDocument()
+    expect(screen.getByText("Applicants")).toBeInTheDocument()
+    expect(screen.getByText("Reviewers")).toBeInTheDocument()
+    expect(screen.getByText("Need help? Contact support.")).toBeInTheDocument()
+  })
+
+  it("shows a form error when sign in is attempted without credentials", () => {
+    renderAt("/")
+
+    fireEvent.click(screen.getByRole("button", { name: "Continue" }))
+
+    expect(screen.getByRole("alert")).toHaveTextContent(
+      "Enter your email and password to continue.",
+    )
   })
 
   it("keeps an applicant out of the reviewer area", () => {
     renderWithRole("/reviewer", "applicant")
 
     expect(
-      screen.getByRole("heading", { name: "Welcome back" }),
+      screen.getByRole("heading", { name: "Sign in to continue." }),
     ).toBeInTheDocument()
   })
 
