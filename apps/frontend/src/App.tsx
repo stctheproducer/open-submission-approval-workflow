@@ -1,5 +1,7 @@
 import { Navigate, Outlet, Route, Routes } from "react-router"
 
+import { SessionStatusCard } from "@/components/session-status-card"
+
 type Role = "applicant" | "reviewer" | null
 
 type AppProps = {
@@ -21,11 +23,15 @@ function LandingRoute({ currentRole }: { currentRole: Role }) {
 function LoginPage() {
   return (
     <main className="flex min-h-svh items-center justify-center p-6">
-      <section className="flex w-full max-w-md flex-col gap-3 rounded-2xl border bg-background p-6 shadow-sm">
-        <h1 className="text-2xl font-semibold">Sign in</h1>
-        <p className="text-sm text-muted-foreground">
-          Use the shared session login for either applicant or reviewer access.
-        </p>
+      <section className="flex w-full max-w-md flex-col gap-4">
+        <div className="rounded-2xl border bg-background p-6 shadow-sm">
+          <h1 className="text-2xl font-semibold">Sign in</h1>
+          <p className="mt-2 text-sm text-muted-foreground">
+            Use the shared session login for either applicant or reviewer access.
+          </p>
+        </div>
+
+        <SessionStatusCard />
       </section>
     </main>
   )

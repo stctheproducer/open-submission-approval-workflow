@@ -1,24 +1,66 @@
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query"
 import { cleanup, render, screen } from "@testing-library/react"
 import { MemoryRouter } from "react-router"
-import { afterEach, describe, expect, it } from "vitest"
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest"
 
 import App from "./App"
+import { ThemeProvider } from "@/components/theme-provider"
 
-function renderAt(path: string) {
-  return render(<MemoryRouter initialEntries={[path]}><App /></MemoryRouter>)
+function createTestQueryClient() {
+  return new QueryClient({
+    defaultOptions: {
+      queries: {
+        retry: false,
+      },
+    },
+  })
 }
 
-function renderWithRole(path: string, currentRole: "applicant" | "reviewer") {
+function renderAt(path: string) {
+  const queryClient = createTestQueryClient()
+
   return render(
-    <MemoryRouter initialEntries={[path]}>
-      <App currentRole={currentRole} />
-    </MemoryRouter>
+    <QueryClientProvider client={queryClient}>
+      <ThemeProvider>
+        <MemoryRouter initialEntries={[path]}>
+          <App />
+        </MemoryRouter>
+      </ThemeProvider>
+    </QueryClientProvider>,
   )
 }
 
+function renderWithRole(path: string, currentRole: "applicant" | "reviewer") {
+  const queryClient = createTestQueryClient()
+
+  return render(
+    <QueryClientProvider client={queryClient}>
+      <ThemeProvider>
+        <MemoryRouter initialEntries={[path]}>
+          <App currentRole={currentRole} />
+        </MemoryRouter>
+      </ThemeProvider>
+    </QueryClientProvider>,
+  )
+}
+
+beforeEach(() => {
+  vi.stubGlobal(
+    "fetch",
+    vi.fn(async () => {
+      return new Response(JSON.stringify({ message: "Unauthorized" }), {
+        status: 401,
+        headers: {
+          "Content-Type": "application/json",
+        },
+      })
+    }) as typeof fetch,
+  )
+})
+
 afterEach(() => {
   cleanup()
-  window.localStorage.clear()
+  vi.unstubAllGlobals()
 })
 
 describe("App routing", () => {
@@ -38,11 +80,20 @@ describe("App routing", () => {
     renderAt("/")
 
     expect(screen.getByRole("heading", { name: "Sign in" })).toBeInTheDocument()
+    expect(screen.getByText("Same-origin session")).toBeInTheDocument()
   })
 
   it("keeps an applicant out of the reviewer area", () => {
     renderWithRole("/reviewer", "applicant")
 
     expect(screen.getByRole("heading", { name: "Sign in" })).toBeInTheDocument()
+  })
+
+  it("shows the session probe fallback when the profile request is unauthorized", async () => {
+    renderAt("/")
+
+    expect(
+      await screen.findByText(/No active session was found yet/i),
+    ).toBeInTheDocument()
   })
 })
