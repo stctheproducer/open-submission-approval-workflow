@@ -18,6 +18,24 @@ services:
       retries: 3
       timeout: 5s
 
+  pgsql-test:
+    image: 'postgres:18'
+    ports:
+      - '5433:5432'
+    environment:
+      PGPASSWORD: '${DB_PASSWORD:-secret}'
+      POSTGRES_DB: 'app_test'
+      POSTGRES_USER: '${DB_USER}'
+      POSTGRES_PASSWORD: '${DB_PASSWORD:-secret}'
+    volumes:
+      - 'sailpgsql-test:/var/lib/postgresql'
+    networks:
+      - sail
+    healthcheck:
+      test: ['CMD', 'pg_isready', '-q', '-d', 'app_test', '-U', '${DB_USER}']
+      retries: 3
+      timeout: 5s
+
   mailpit:
     image: 'axllent/mailpit:latest'
     ports:
@@ -37,3 +55,4 @@ networks:
 
 volumes:
   sailpgsql:
+  sailpgsql-test:

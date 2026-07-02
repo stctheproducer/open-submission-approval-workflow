@@ -6,12 +6,11 @@ const dbConfig = defineConfig({
   /**
    * Default connection used for all queries.
    */
-  connection: 'pg',
+  connection: app.inTest ? 'test' : 'pg',
 
   connections: {
     /**
      * PostgreSQL connection (default).
-     * Install package to switch: npm install pg
      */
     pg: {
       client: 'pg',
@@ -27,6 +26,25 @@ const dbConfig = defineConfig({
         paths: ['database/migrations'],
       },
       debug: app.inDev,
+    },
+
+    /**
+     * Test connection (separate database for testing).
+     */
+    test: {
+      client: 'pg',
+      connection: {
+        host: env.get('DB_HOST'),
+        port: 5433,
+        user: env.get('DB_USER'),
+        password: env.get('DB_PASSWORD'),
+        database: env.get('DB_DATABASE'),
+      },
+      migrations: {
+        naturalSort: true,
+        paths: ['database/migrations'],
+      },
+      debug: app.inTest,
     },
 
     /**

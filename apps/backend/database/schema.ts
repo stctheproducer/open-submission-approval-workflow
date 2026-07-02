@@ -7,8 +7,91 @@
 import { BaseModel, column } from '@adonisjs/lucid/orm'
 import { DateTime } from 'luxon'
 
+export class ApplicationSchema extends BaseModel {
+  static $columns = [
+    'amount',
+    'assignedReviewerId',
+    'contactEmail',
+    'contactName',
+    'createdAt',
+    'category',
+    'id',
+    'organizationName',
+    'description',
+    'title',
+    'status',
+    'updatedAt',
+    'userId',
+  ] as const
+  $columns = ApplicationSchema.$columns
+  @column()
+  declare amount: string | null
+  @column()
+  declare assignedReviewerId: number | null
+  @column()
+  declare contactEmail: string | null
+  @column()
+  declare contactName: string | null
+  @column.dateTime({ autoCreate: true })
+  declare createdAt: DateTime
+  @column()
+  declare category: string | null
+  @column({ isPrimary: true })
+  declare id: number
+  @column()
+  declare description: string | null
+  @column()
+  declare organizationName: string | null
+  @column()
+  declare title: string | null
+  @column()
+  declare status: string
+  @column.dateTime({ autoCreate: true, autoUpdate: true })
+  declare updatedAt: DateTime | null
+  @column()
+  declare userId: number | null
+}
+
+export class ApplicationAuditLogEntrySchema extends BaseModel {
+  static $columns = [
+    'applicationId',
+    'actorUserId',
+    'comment',
+    'createdAt',
+    'id',
+    'nextStatus',
+    'previousStatus',
+  ] as const
+  $columns = ApplicationAuditLogEntrySchema.$columns
+  @column()
+  declare applicationId: number
+  @column()
+  declare actorUserId: number
+  @column()
+  declare comment: string | null
+  @column.dateTime({ autoCreate: true })
+  declare createdAt: DateTime
+  @column({ isPrimary: true })
+  declare id: number
+  @column()
+  declare nextStatus: string
+  @column()
+  declare previousStatus: string
+}
+
 export class AuthAccessTokenSchema extends BaseModel {
-  static $columns = ['abilities', 'createdAt', 'expiresAt', 'hash', 'id', 'lastUsedAt', 'name', 'tokenableId', 'type', 'updatedAt'] as const
+  static $columns = [
+    'abilities',
+    'createdAt',
+    'expiresAt',
+    'hash',
+    'id',
+    'lastUsedAt',
+    'name',
+    'tokenableId',
+    'type',
+    'updatedAt',
+  ] as const
   $columns = AuthAccessTokenSchema.$columns
   @column()
   declare abilities: string
@@ -33,7 +116,15 @@ export class AuthAccessTokenSchema extends BaseModel {
 }
 
 export class UserSchema extends BaseModel {
-  static $columns = ['createdAt', 'email', 'fullName', 'id', 'password', 'updatedAt'] as const
+  static $columns = [
+    'createdAt',
+    'email',
+    'fullName',
+    'id',
+    'password',
+    'role',
+    'updatedAt',
+  ] as const
   $columns = UserSchema.$columns
   @column.dateTime({ autoCreate: true })
   declare createdAt: DateTime
@@ -45,6 +136,8 @@ export class UserSchema extends BaseModel {
   declare id: number
   @column({ serializeAs: null })
   declare password: string
+  @column()
+  declare role: string
   @column.dateTime({ autoCreate: true, autoUpdate: true })
   declare updatedAt: DateTime | null
 }

@@ -67,4 +67,148 @@ export interface Registry {
       errorResponse: ExtractErrorResponse<Awaited<ReturnType<import('#controllers/access_tokens_controller').default['destroy']>>>
     }
   }
+  'applicant.applications.index': {
+    methods: ["GET","HEAD"]
+    pattern: '/api/v1/applicant/applications'
+    types: {
+      body: {}
+      paramsTuple: []
+      params: {}
+      query: {}
+      response: ExtractResponse<Awaited<ReturnType<import('#controllers/applications_controller').default['index']>>>
+      errorResponse: ExtractErrorResponse<Awaited<ReturnType<import('#controllers/applications_controller').default['index']>>>
+    }
+  }
+  'applicant.applications.store': {
+    methods: ["POST"]
+    pattern: '/api/v1/applicant/applications'
+    types: {
+      body: ExtractBody<InferInput<(typeof import('#validators/application').createApplicationValidator)>>
+      paramsTuple: []
+      params: {}
+      query: ExtractQuery<InferInput<(typeof import('#validators/application').createApplicationValidator)>>
+      response: ExtractResponse<Awaited<ReturnType<import('#controllers/applications_controller').default['store']>>>
+      errorResponse: ExtractErrorResponse<Awaited<ReturnType<import('#controllers/applications_controller').default['store']>>> | { status: 422; response: { errors: SimpleError[] } }
+    }
+  }
+  'applicant.applications.show': {
+    methods: ["GET","HEAD"]
+    pattern: '/api/v1/applicant/applications/:id'
+    types: {
+      body: {}
+      paramsTuple: [ParamValue]
+      params: { id: ParamValue }
+      query: {}
+      response: ExtractResponse<Awaited<ReturnType<import('#controllers/applications_controller').default['show']>>>
+      errorResponse: ExtractErrorResponse<Awaited<ReturnType<import('#controllers/applications_controller').default['show']>>>
+    }
+  }
+  'applicant.applications.update': {
+    methods: ["PUT","PATCH"]
+    pattern: '/api/v1/applicant/applications/:id'
+    types: {
+      body: ExtractBody<InferInput<(typeof import('#validators/application').updateApplicationValidator)>>
+      paramsTuple: [ParamValue]
+      params: { id: ParamValue }
+      query: ExtractQuery<InferInput<(typeof import('#validators/application').updateApplicationValidator)>>
+      response: ExtractResponse<Awaited<ReturnType<import('#controllers/applications_controller').default['update']>>>
+      errorResponse: ExtractErrorResponse<Awaited<ReturnType<import('#controllers/applications_controller').default['update']>>> | { status: 422; response: { errors: SimpleError[] } }
+    }
+  }
+  'applicant.applications.submissions.store': {
+    methods: ["POST"]
+    pattern: '/api/v1/applicant/applications/:application_id/submissions'
+    types: {
+      body: {}
+      paramsTuple: [ParamValue]
+      params: { application_id: ParamValue }
+      query: {}
+      response: ExtractResponse<Awaited<ReturnType<import('#controllers/application_submissions_controller').default['store']>>>
+      errorResponse: ExtractErrorResponse<Awaited<ReturnType<import('#controllers/application_submissions_controller').default['store']>>>
+    }
+  }
+  'applicant.application_draft_reopenings.store': {
+    methods: ["POST"]
+    pattern: '/api/v1/applicant/applications/:id/reopen'
+    types: {
+      body: {}
+      paramsTuple: [ParamValue]
+      params: { id: ParamValue }
+      query: {}
+      response: ExtractResponse<Awaited<ReturnType<import('#controllers/application_draft_reopenings_controller').default['store']>>>
+      errorResponse: ExtractErrorResponse<Awaited<ReturnType<import('#controllers/application_draft_reopenings_controller').default['store']>>>
+    }
+  }
+  'reviewer.applications.rejections.store': {
+    methods: ["POST"]
+    pattern: '/api/v1/reviewer/applications/:application_id/rejections'
+    types: {
+      body: ExtractBody<InferInput<(typeof import('#validators/application_rejection').rejectApplicationValidator)>>
+      paramsTuple: [ParamValue]
+      params: { application_id: ParamValue }
+      query: {}
+      response: ExtractResponse<Awaited<ReturnType<import('#controllers/application_rejections_controller').default['store']>>>
+      errorResponse: ExtractErrorResponse<Awaited<ReturnType<import('#controllers/application_rejections_controller').default['store']>>> | { status: 422; response: { errors: SimpleError[] } }
+    }
+  }
+  'reviewer.applications.index': {
+    methods: ["GET","HEAD"]
+    pattern: '/api/v1/reviewer/applications'
+    types: {
+      body: {}
+      paramsTuple: []
+      params: {}
+      query: {}
+      response: ExtractResponse<Awaited<ReturnType<import('#controllers/reviewer_applications_controller').default['index']>>>
+      errorResponse: ExtractErrorResponse<Awaited<ReturnType<import('#controllers/reviewer_applications_controller').default['index']>>>
+    }
+  }
+  'reviewer.applications.show': {
+    methods: ["GET","HEAD"]
+    pattern: '/api/v1/reviewer/applications/:id'
+    types: {
+      body: {}
+      paramsTuple: [ParamValue]
+      params: { id: ParamValue }
+      query: {}
+      response: ExtractResponse<Awaited<ReturnType<import('#controllers/reviewer_applications_controller').default['show']>>>
+      errorResponse: ExtractErrorResponse<Awaited<ReturnType<import('#controllers/reviewer_applications_controller').default['show']>>>
+    }
+  }
+  'reviewer.applications.review_starts.store': {
+    methods: ["POST"]
+    pattern: '/api/v1/reviewer/applications/:id/review-starts'
+    types: {
+      body: {}
+      paramsTuple: [ParamValue]
+      params: { id: ParamValue }
+      query: {}
+      response: ExtractResponse<Awaited<ReturnType<import('#controllers/application_review_starts_controller').default['store']>>>
+      errorResponse: ExtractErrorResponse<Awaited<ReturnType<import('#controllers/application_review_starts_controller').default['store']>>>
+    }
+  }
+  'reviewer.application_approvals.store': {
+    methods: ["POST"]
+    pattern: '/api/v1/reviewer/applications/:applicationId/approvals'
+    types: {
+      body: {}
+      paramsTuple: [ParamValue]
+      params: { applicationId: ParamValue }
+      query: {}
+      response: ExtractResponse<Awaited<ReturnType<import('#controllers/application_approvals_controller').default['store']>>>
+      errorResponse: ExtractErrorResponse<Awaited<ReturnType<import('#controllers/application_approvals_controller').default['store']>>>
+    }
+  }
+  'reviewer.application_change_requests.store': {
+    methods: ["POST"]
+    pattern: '/api/v1/reviewer/applications/:id/change-request'
+    types: {
+      body: ExtractBody<InferInput<(typeof import('#validators/application_change_request').requestApplicationChangeValidator)>>
+      paramsTuple: [ParamValue]
+      params: { id: ParamValue }
+      query: {}
+      response: ExtractResponse<Awaited<ReturnType<import('#controllers/application_change_requests_controller').default['store']>>>
+      errorResponse: ExtractErrorResponse<Awaited<ReturnType<import('#controllers/application_change_requests_controller').default['store']>>> | { status: 422; response: { errors: SimpleError[] } }
+    }
+  }
 }

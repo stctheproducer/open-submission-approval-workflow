@@ -13,11 +13,8 @@
 */
 
 import { Bouncer } from '@adonisjs/bouncer'
+import type User from '#models/user'
 
-/**
- * Delete the following ability to start from
- * scratch
- */
-export const editUser = Bouncer.ability(() => {
-  return true
+export const accessReviewerWorkspace = Bouncer.ability((user: User) => {
+  return user.role === 'reviewer'
 })
