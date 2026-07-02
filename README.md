@@ -42,6 +42,7 @@ This section will be updated once the project is deployed on Sevalla.
 
 - **Monorepo**: `pnpm` + Turborepo
 - **Backend**: AdonisJS 7, Lucid ORM, PostgreSQL, session auth, Bouncer, Drive, VineJS, Tuyau
+- **Backend workflow support**: AdonisJS Plus Flow during development
 - **Frontend**: React + Vite + TypeScript + shadcn/ui
 - **Frontend data layer**: `@tuyau/react-query`
 - **Database**: PostgreSQL
@@ -248,6 +249,12 @@ Target deployment:
 
 The backend Dockerfile lives at `apps/backend/Dockerfile`.
 
+### AdonisJS Plus note
+
+I have a paid personal AdonisJS Plus subscription and I am using Flow during development to stay aligned with the standards and intended architecture of the AdonisJS ecosystem. This helps me move faster on backend implementation and focus more of the exercise on product development instead of manually composing and evaluating a larger mix of Node.js packages and conventions.
+
+This is a development-time accelerator, not a final deployment requirement. Before the final deployed version is handed over, the `@adonisplus/*` packages will be removed because they rely on a personal authentication token that I am not permitted to share.
+
 ## Architectural Decisions
 
 Recorded ADRs:
@@ -269,6 +276,12 @@ The intended flow is:
 6. merge only once the slice is correct, tested, and documented
 
 This approach is deliberate for the assessment. It keeps scope under control, produces a readable delivery history, and makes workflow, authorization, and testing decisions easier to review incrementally.
+
+Planning and delivery in this repo also use a small set of agent skills intentionally:
+
+- `grill-with-docs` to reach a shared understanding of the workflow, architecture, and glossary before implementation
+- `to-prd` to turn agreed design decisions into PRD issues
+- `to-issues` to break PRDs into vertical-slice issues that can move through review cleanly
 
 ## Trade-offs
 
@@ -297,6 +310,10 @@ If I had more time after the core rubric is solid, I would prioritize:
 | Tool | How it was used | What I verified manually |
 | ---- | --------------- | ------------------------ |
 | Codex / GPT-5 | Planning the architecture, stress-testing workflow decisions, drafting repo guidance, and generating setup/documentation scaffolding | I reviewed the resulting repo rules, setup commands, ADRs, and documentation choices directly |
+| AdonisJS Plus Flow | Used during backend development to keep the AdonisJS application aligned with framework-native patterns and standards so I can focus effort on product behavior | I am responsible for validating the resulting architecture, APIs, workflow rules, and deployment implications myself |
+| `grill-with-docs` | Used to sharpen the workflow, naming, deployment, and documentation decisions before implementation | I reviewed and accepted the resulting glossary terms, ADRs, and architectural constraints directly |
+| `to-prd` | Used to convert the agreed design into PRD issues in GitHub | I reviewed the PRD structure, seams, and issue scope before publishing |
+| `to-issues` | Planned for breaking PRDs into vertical-slice implementation issues that can move through PR review cleanly | I will review issue boundaries and make sure each slice is coherent, testable, and appropriately scoped |
 | AI-assisted development workflow | Used for design iteration, implementation planning, and documentation shaping | I am responsible for validating every code path, workflow rule, and setup instruction before submission |
 
 This section will be expanded with implementation-specific entries as development continues.
