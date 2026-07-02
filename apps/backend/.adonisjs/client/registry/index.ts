@@ -72,6 +72,12 @@ const routes = {
     tokens: [{"old":"/api/v1/applicant/applications/:id/reopen","type":0,"val":"api","end":""},{"old":"/api/v1/applicant/applications/:id/reopen","type":0,"val":"v1","end":""},{"old":"/api/v1/applicant/applications/:id/reopen","type":0,"val":"applicant","end":""},{"old":"/api/v1/applicant/applications/:id/reopen","type":0,"val":"applications","end":""},{"old":"/api/v1/applicant/applications/:id/reopen","type":1,"val":"id","end":""},{"old":"/api/v1/applicant/applications/:id/reopen","type":0,"val":"reopen","end":""}],
     types: placeholder as Registry['applicant.application_draft_reopenings.store']['types'],
   },
+  'reviewer.applications.rejections.store': {
+    methods: ["POST"],
+    pattern: '/api/v1/reviewer/applications/:application_id/rejections',
+    tokens: [{"old":"/api/v1/reviewer/applications/:application_id/rejections","type":0,"val":"api","end":""},{"old":"/api/v1/reviewer/applications/:application_id/rejections","type":0,"val":"v1","end":""},{"old":"/api/v1/reviewer/applications/:application_id/rejections","type":0,"val":"reviewer","end":""},{"old":"/api/v1/reviewer/applications/:application_id/rejections","type":0,"val":"applications","end":""},{"old":"/api/v1/reviewer/applications/:application_id/rejections","type":1,"val":"application_id","end":""},{"old":"/api/v1/reviewer/applications/:application_id/rejections","type":0,"val":"rejections","end":""}],
+    types: placeholder as Registry['reviewer.applications.rejections.store']['types'],
+  },
   'reviewer.applications.index': {
     methods: ["GET","HEAD"],
     pattern: '/api/v1/reviewer/applications',

@@ -44,6 +44,18 @@ export default class ApplicationPolicy extends BasePolicy {
     return AuthorizationResponse.allow()
   }
 
+  reject(user: User, application: Application): AuthorizerResponse {
+    if (user.role !== 'reviewer') {
+      return AuthorizationResponse.deny('Forbidden', 403)
+    }
+
+    if (application.assignedReviewerId !== user.id) {
+      return AuthorizationResponse.deny('Forbidden', 403)
+    }
+
+    return AuthorizationResponse.allow()
+  }
+
   reopenDraft(user: User, application: Application): AuthorizerResponse {
     if (user.id !== application.userId) {
       return AuthorizationResponse.deny('Forbidden', 403)

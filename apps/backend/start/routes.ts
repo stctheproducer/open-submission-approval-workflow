@@ -68,6 +68,12 @@ router
             'store',
           ])
           .where('id', router.matchers.number())
+        router
+          .post('applications/:application_id/rejections', [
+            controllers.ApplicationRejections,
+            'store',
+          ])
+          .where('application_id', router.matchers.number())
       })
       .prefix('reviewer')
       .as('reviewer')

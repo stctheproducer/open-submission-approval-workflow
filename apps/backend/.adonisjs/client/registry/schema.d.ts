@@ -139,6 +139,18 @@ export interface Registry {
       errorResponse: ExtractErrorResponse<Awaited<ReturnType<import('#controllers/application_draft_reopenings_controller').default['store']>>>
     }
   }
+  'reviewer.applications.rejections.store': {
+    methods: ["POST"]
+    pattern: '/api/v1/reviewer/applications/:application_id/rejections'
+    types: {
+      body: ExtractBody<InferInput<(typeof import('#validators/application_rejection').rejectApplicationValidator)>>
+      paramsTuple: [ParamValue]
+      params: { application_id: ParamValue }
+      query: {}
+      response: ExtractResponse<Awaited<ReturnType<import('#controllers/application_rejections_controller').default['store']>>>
+      errorResponse: ExtractErrorResponse<Awaited<ReturnType<import('#controllers/application_rejections_controller').default['store']>>> | { status: 422; response: { errors: SimpleError[] } }
+    }
+  }
   'reviewer.applications.index': {
     methods: ["GET","HEAD"]
     pattern: '/api/v1/reviewer/applications'
