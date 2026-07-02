@@ -79,14 +79,23 @@ describe("App routing", () => {
   it("keeps unauthenticated users on the sign-in page", () => {
     renderAt("/")
 
-    expect(screen.getByRole("heading", { name: "Sign in" })).toBeInTheDocument()
+    expect(
+      screen.getByRole("heading", { name: "Enter the workflow workspace" }),
+    ).toBeInTheDocument()
+    expect(
+      screen.getByRole("img", { name: "Illustration of the approval workflow login experience" }),
+    ).toBeInTheDocument()
+    expect(screen.getByLabelText("Email")).toBeInTheDocument()
+    expect(screen.getByLabelText("Password")).toBeInTheDocument()
     expect(screen.getByText("Same-origin session")).toBeInTheDocument()
   })
 
   it("keeps an applicant out of the reviewer area", () => {
     renderWithRole("/reviewer", "applicant")
 
-    expect(screen.getByRole("heading", { name: "Sign in" })).toBeInTheDocument()
+    expect(
+      screen.getByRole("heading", { name: "Enter the workflow workspace" }),
+    ).toBeInTheDocument()
   })
 
   it("shows the session probe fallback when the profile request is unauthorized", async () => {
