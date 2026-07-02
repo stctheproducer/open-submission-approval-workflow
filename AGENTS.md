@@ -59,6 +59,18 @@ This repo uses a single shared domain context with one root `CONTEXT.md` and roo
 - Session auth is the default production auth model. Frontend requests should use same-origin cookie-based sessions from day one.
 - The backend is deployed as a containerized AdonisJS app. The frontend is deployed as a static site build. PostgreSQL is managed.
 
+## Commit and PR rules
+
+- Use Conventional Commits for every commit in the form `<type>(<scope>): <short imperative summary>`.
+- Prefer explicit scopes tied to the changed area, such as `workflow`, `auth`, `reviewer`, `applicant`, `docs`, `deployment`, or `migrations`.
+- If changes span unrelated concerns, split them into separate scoped commits.
+- Every commit message must include a body with specific `- ` bullet points covering why the change was needed, what changed, and any relevant impact, risk, migration, or test notes.
+- When making commits from the shell, use a heredoc so multiline commit bodies are preserved correctly.
+- Before creating or materially updating a PR, read the repository PR template and use its exact structure.
+- PR titles should also follow Conventional Commits.
+- One PR may contain multiple closely related vertical slices from the same branch when that produces a more coherent review unit. Avoid creating extra branches when the slices are tightly coupled.
+- Even when one PR contains multiple slices, keep the related issues and test coverage explicit so the reviewer can still assess each slice clearly.
+
 ## Current ADRs
 
 - `docs/adr/0001-same-origin-session-auth-on-sevalla.md`

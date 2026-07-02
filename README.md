@@ -263,8 +263,8 @@ The intended flow is:
 
 1. create a PRD issue for a major assessment concern
 2. split that PRD into thin vertical-slice implementation issues
-3. implement one slice per branch
-4. open a PR for the slice
+3. implement one or more closely related slices on a branch
+4. open a PR for that coherent review unit
 5. require human review before merge
 6. merge only once the slice is correct, tested, and documented
 
