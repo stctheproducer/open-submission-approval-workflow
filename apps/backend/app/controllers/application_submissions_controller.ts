@@ -17,6 +17,6 @@ export default class ApplicationSubmissionsController {
     const application = await this.draftService.findForUser(user.id, params.application_id)
     const submitted = await submissionService.submit(application, user)
 
-    return serialize(ApplicationTransformer.transform(submitted))
+    return serialize(ApplicationTransformer.transform(submitted).useVariant('forDetailedView'))
   }
 }

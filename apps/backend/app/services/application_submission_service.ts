@@ -30,6 +30,9 @@ export default class ApplicationSubmissionService {
 
     return Application.query()
       .where('id', application.id)
+      .preload('statusTransitions', (query) => {
+        query.preload('actor').orderBy('createdAt', 'asc')
+      })
       .preload('auditLogEntries', (query) => {
         query.preload('actor').orderBy('createdAt', 'asc')
       })

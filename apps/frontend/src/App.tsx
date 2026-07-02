@@ -103,8 +103,6 @@ function LoginPage() {
                     />
                     Keep me signed in
                   </label>
-
-                  <span className="text-slate-400">For this device only.</span>
                 </div>
 
                 <button

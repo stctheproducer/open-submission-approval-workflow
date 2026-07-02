@@ -72,12 +72,6 @@ const routes = {
     tokens: [{"old":"/api/v1/applicant/applications/:id/reopen","type":0,"val":"api","end":""},{"old":"/api/v1/applicant/applications/:id/reopen","type":0,"val":"v1","end":""},{"old":"/api/v1/applicant/applications/:id/reopen","type":0,"val":"applicant","end":""},{"old":"/api/v1/applicant/applications/:id/reopen","type":0,"val":"applications","end":""},{"old":"/api/v1/applicant/applications/:id/reopen","type":1,"val":"id","end":""},{"old":"/api/v1/applicant/applications/:id/reopen","type":0,"val":"reopen","end":""}],
     types: placeholder as Registry['applicant.application_draft_reopenings.store']['types'],
   },
-  'reviewer.applications.rejections.store': {
-    methods: ["POST"],
-    pattern: '/api/v1/reviewer/applications/:application_id/rejections',
-    tokens: [{"old":"/api/v1/reviewer/applications/:application_id/rejections","type":0,"val":"api","end":""},{"old":"/api/v1/reviewer/applications/:application_id/rejections","type":0,"val":"v1","end":""},{"old":"/api/v1/reviewer/applications/:application_id/rejections","type":0,"val":"reviewer","end":""},{"old":"/api/v1/reviewer/applications/:application_id/rejections","type":0,"val":"applications","end":""},{"old":"/api/v1/reviewer/applications/:application_id/rejections","type":1,"val":"application_id","end":""},{"old":"/api/v1/reviewer/applications/:application_id/rejections","type":0,"val":"rejections","end":""}],
-    types: placeholder as Registry['reviewer.applications.rejections.store']['types'],
-  },
   'reviewer.applications.index': {
     methods: ["GET","HEAD"],
     pattern: '/api/v1/reviewer/applications',
@@ -90,11 +84,11 @@ const routes = {
     tokens: [{"old":"/api/v1/reviewer/applications/:id","type":0,"val":"api","end":""},{"old":"/api/v1/reviewer/applications/:id","type":0,"val":"v1","end":""},{"old":"/api/v1/reviewer/applications/:id","type":0,"val":"reviewer","end":""},{"old":"/api/v1/reviewer/applications/:id","type":0,"val":"applications","end":""},{"old":"/api/v1/reviewer/applications/:id","type":1,"val":"id","end":""}],
     types: placeholder as Registry['reviewer.applications.show']['types'],
   },
-  'reviewer.applications.review_starts.store': {
+  'reviewer.application_review_starts.store': {
     methods: ["POST"],
     pattern: '/api/v1/reviewer/applications/:id/review-starts',
     tokens: [{"old":"/api/v1/reviewer/applications/:id/review-starts","type":0,"val":"api","end":""},{"old":"/api/v1/reviewer/applications/:id/review-starts","type":0,"val":"v1","end":""},{"old":"/api/v1/reviewer/applications/:id/review-starts","type":0,"val":"reviewer","end":""},{"old":"/api/v1/reviewer/applications/:id/review-starts","type":0,"val":"applications","end":""},{"old":"/api/v1/reviewer/applications/:id/review-starts","type":1,"val":"id","end":""},{"old":"/api/v1/reviewer/applications/:id/review-starts","type":0,"val":"review-starts","end":""}],
-    types: placeholder as Registry['reviewer.applications.review_starts.store']['types'],
+    types: placeholder as Registry['reviewer.application_review_starts.store']['types'],
   },
   'reviewer.application_approvals.store': {
     methods: ["POST"],
@@ -107,6 +101,12 @@ const routes = {
     pattern: '/api/v1/reviewer/applications/:id/change-request',
     tokens: [{"old":"/api/v1/reviewer/applications/:id/change-request","type":0,"val":"api","end":""},{"old":"/api/v1/reviewer/applications/:id/change-request","type":0,"val":"v1","end":""},{"old":"/api/v1/reviewer/applications/:id/change-request","type":0,"val":"reviewer","end":""},{"old":"/api/v1/reviewer/applications/:id/change-request","type":0,"val":"applications","end":""},{"old":"/api/v1/reviewer/applications/:id/change-request","type":1,"val":"id","end":""},{"old":"/api/v1/reviewer/applications/:id/change-request","type":0,"val":"change-request","end":""}],
     types: placeholder as Registry['reviewer.application_change_requests.store']['types'],
+  },
+  'reviewer.application_rejections.store': {
+    methods: ["POST"],
+    pattern: '/api/v1/reviewer/applications/:application_id/rejections',
+    tokens: [{"old":"/api/v1/reviewer/applications/:application_id/rejections","type":0,"val":"api","end":""},{"old":"/api/v1/reviewer/applications/:application_id/rejections","type":0,"val":"v1","end":""},{"old":"/api/v1/reviewer/applications/:application_id/rejections","type":0,"val":"reviewer","end":""},{"old":"/api/v1/reviewer/applications/:application_id/rejections","type":0,"val":"applications","end":""},{"old":"/api/v1/reviewer/applications/:application_id/rejections","type":1,"val":"application_id","end":""},{"old":"/api/v1/reviewer/applications/:application_id/rejections","type":0,"val":"rejections","end":""}],
+    types: placeholder as Registry['reviewer.application_rejections.store']['types'],
   },
 } as const satisfies Record<string, AdonisEndpoint>
 
