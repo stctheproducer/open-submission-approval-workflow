@@ -30,37 +30,15 @@ function LoginPage() {
           <div className="relative flex h-full min-h-[32rem] flex-col justify-between gap-8 p-6 sm:p-10 lg:p-12">
             <div className="max-w-xl">
               <p className="text-sm font-medium uppercase tracking-[0.28em] text-cyan-200/80">
-                Assignment B
+                Applications
               </p>
               <h1 className="mt-5 max-w-lg text-4xl font-semibold tracking-tight text-white sm:text-5xl">
-                A cleaner way to sign in and move through the approval workflow.
+                Manage applications from one place.
               </h1>
               <p className="mt-5 max-w-xl text-sm leading-6 text-slate-300 sm:text-base">
-                Use the same-origin session flow from day one. The browser keeps the cookie,
-                Tuyau reads the backend registry, and the app stays aligned with the workflow
-                vocabulary.
+                Sign in to continue to your dashboard and keep submissions, reviews, and decisions
+                moving.
               </p>
-            </div>
-
-            <div className="grid gap-3 sm:grid-cols-3">
-              <div className="rounded-2xl border border-white/10 bg-white/6 p-4 backdrop-blur">
-                <p className="text-xs uppercase tracking-[0.24em] text-cyan-200/75">
-                  Session
-                </p>
-                <p className="mt-2 text-sm text-slate-100">Cookie-backed</p>
-              </div>
-              <div className="rounded-2xl border border-white/10 bg-white/6 p-4 backdrop-blur">
-                <p className="text-xs uppercase tracking-[0.24em] text-cyan-200/75">
-                  API
-                </p>
-                <p className="mt-2 text-sm text-slate-100">Type-safe Tuyau</p>
-              </div>
-              <div className="rounded-2xl border border-white/10 bg-white/6 p-4 backdrop-blur">
-                <p className="text-xs uppercase tracking-[0.24em] text-cyan-200/75">
-                  Roles
-                </p>
-                <p className="mt-2 text-sm text-slate-100">Applicant and reviewer</p>
-              </div>
             </div>
 
             <div className="overflow-hidden rounded-[2rem] border border-white/10 bg-white/8 shadow-2xl shadow-cyan-950/20">
@@ -78,20 +56,20 @@ function LoginPage() {
             <div className="rounded-[2rem] border border-white/10 bg-slate-950/70 p-6 shadow-2xl shadow-slate-950/40 backdrop-blur-xl sm:p-8">
               <div className="space-y-3">
                 <p className="text-sm font-medium uppercase tracking-[0.24em] text-cyan-200/80">
-                  Sign in
+                  Secure access
                 </p>
                 <h2 className="text-3xl font-semibold tracking-tight text-white">
-                  Enter the workflow workspace
+                  Welcome back
                 </h2>
                 <p className="max-w-md text-sm leading-6 text-slate-300">
-                  Use the shared session login for either applicant or reviewer access.
+                  Sign in with your work email to access your dashboard.
                 </p>
               </div>
 
               <form className="mt-8 space-y-4" aria-label="Sign in form">
                 <div className="space-y-2">
                   <label className="text-sm font-medium text-slate-100" htmlFor="email">
-                    Email
+                    Work email
                   </label>
                   <input
                     id="email"
@@ -124,17 +102,17 @@ function LoginPage() {
                       name="remember"
                       className="size-4 rounded border-white/20 bg-transparent text-cyan-400 focus:ring-cyan-300/20"
                     />
-                    Remember this device
+                    Keep me signed in
                   </label>
 
-                  <span className="text-slate-400">Sessions stay same-origin.</span>
+                  <span className="text-slate-400">For this device only.</span>
                 </div>
 
                 <button
                   type="submit"
                   className="inline-flex h-12 w-full items-center justify-center rounded-xl bg-cyan-300 px-4 text-sm font-semibold text-slate-950 transition hover:bg-cyan-200 focus:outline-none focus:ring-2 focus:ring-cyan-300/40"
                 >
-                  Sign in
+                  Continue
                 </button>
               </form>
             </div>

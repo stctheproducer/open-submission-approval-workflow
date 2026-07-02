@@ -80,21 +80,21 @@ describe("App routing", () => {
     renderAt("/")
 
     expect(
-      screen.getByRole("heading", { name: "Enter the workflow workspace" }),
+      screen.getByRole("heading", { name: "Welcome back" }),
     ).toBeInTheDocument()
     expect(
       screen.getByRole("img", { name: "Illustration of the approval workflow login experience" }),
     ).toBeInTheDocument()
-    expect(screen.getByLabelText("Email")).toBeInTheDocument()
+    expect(screen.getByLabelText("Work email")).toBeInTheDocument()
     expect(screen.getByLabelText("Password")).toBeInTheDocument()
-    expect(screen.getByText("Same-origin session")).toBeInTheDocument()
+    expect(screen.getByText("Session status")).toBeInTheDocument()
   })
 
   it("keeps an applicant out of the reviewer area", () => {
     renderWithRole("/reviewer", "applicant")
 
     expect(
-      screen.getByRole("heading", { name: "Enter the workflow workspace" }),
+      screen.getByRole("heading", { name: "Welcome back" }),
     ).toBeInTheDocument()
   })
 
@@ -102,7 +102,7 @@ describe("App routing", () => {
     renderAt("/")
 
     expect(
-      await screen.findByText(/No active session was found yet/i),
+      await screen.findByText(/No active session yet/i),
     ).toBeInTheDocument()
   })
 })
