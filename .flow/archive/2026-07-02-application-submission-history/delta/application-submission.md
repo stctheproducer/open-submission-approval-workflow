@@ -1,6 +1,7 @@
 ---
 capability: application-submission
 change: application-submission-history
+synced: 2026-07-02
 ---
 
 # Delta — application-submission

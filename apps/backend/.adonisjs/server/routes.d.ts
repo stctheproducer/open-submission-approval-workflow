@@ -27,6 +27,7 @@ export type ScannedRoutes = {
     'auth.access_tokens.store': { paramsTuple?: []; params?: {} }
     'profile.access_tokens.destroy': { paramsTuple?: []; params?: {} }
     'applicant.applications.store': { paramsTuple?: []; params?: {} }
+    'applicant.applications.submissions.store': { paramsTuple: [ParamValue]; params: { application_id: ParamValue } }
   }
   PUT: {
     'applicant.applications.update': { paramsTuple: [ParamValue]; params: { id: ParamValue } }

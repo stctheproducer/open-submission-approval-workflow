@@ -115,4 +115,16 @@ export interface Registry {
       errorResponse: ExtractErrorResponse<Awaited<ReturnType<import('#controllers/applications_controller').default['update']>>> | { status: 422; response: { errors: SimpleError[] } }
     }
   }
+  'applicant.applications.submissions.store': {
+    methods: ["POST"]
+    pattern: '/api/v1/applicant/applications/:application_id/submissions'
+    types: {
+      body: {}
+      paramsTuple: [ParamValue]
+      params: { application_id: ParamValue }
+      query: {}
+      response: ExtractResponse<Awaited<ReturnType<import('#controllers/application_submissions_controller').default['store']>>>
+      errorResponse: ExtractErrorResponse<Awaited<ReturnType<import('#controllers/application_submissions_controller').default['store']>>>
+    }
+  }
 }

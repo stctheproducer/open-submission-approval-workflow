@@ -60,6 +60,12 @@ const routes = {
     tokens: [{"old":"/api/v1/applicant/applications/:id","type":0,"val":"api","end":""},{"old":"/api/v1/applicant/applications/:id","type":0,"val":"v1","end":""},{"old":"/api/v1/applicant/applications/:id","type":0,"val":"applicant","end":""},{"old":"/api/v1/applicant/applications/:id","type":0,"val":"applications","end":""},{"old":"/api/v1/applicant/applications/:id","type":1,"val":"id","end":""}],
     types: placeholder as Registry['applicant.applications.update']['types'],
   },
+  'applicant.applications.submissions.store': {
+    methods: ["POST"],
+    pattern: '/api/v1/applicant/applications/:application_id/submissions',
+    tokens: [{"old":"/api/v1/applicant/applications/:application_id/submissions","type":0,"val":"api","end":""},{"old":"/api/v1/applicant/applications/:application_id/submissions","type":0,"val":"v1","end":""},{"old":"/api/v1/applicant/applications/:application_id/submissions","type":0,"val":"applicant","end":""},{"old":"/api/v1/applicant/applications/:application_id/submissions","type":0,"val":"applications","end":""},{"old":"/api/v1/applicant/applications/:application_id/submissions","type":1,"val":"application_id","end":""},{"old":"/api/v1/applicant/applications/:application_id/submissions","type":0,"val":"submissions","end":""}],
+    types: placeholder as Registry['applicant.applications.submissions.store']['types'],
+  },
 } as const satisfies Record<string, AdonisEndpoint>
 
 export { routes }

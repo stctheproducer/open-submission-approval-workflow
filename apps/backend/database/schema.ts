@@ -37,6 +37,33 @@ export class ApplicationSchema extends BaseModel {
   declare userId: number | null
 }
 
+export class ApplicationAuditLogEntrySchema extends BaseModel {
+  static $columns = [
+    'applicationId',
+    'actorUserId',
+    'comment',
+    'createdAt',
+    'id',
+    'nextStatus',
+    'previousStatus',
+  ] as const
+  $columns = ApplicationAuditLogEntrySchema.$columns
+  @column()
+  declare applicationId: number
+  @column()
+  declare actorUserId: number
+  @column()
+  declare comment: string | null
+  @column.dateTime({ autoCreate: true })
+  declare createdAt: DateTime
+  @column({ isPrimary: true })
+  declare id: number
+  @column()
+  declare nextStatus: string
+  @column()
+  declare previousStatus: string
+}
+
 export class AuthAccessTokenSchema extends BaseModel {
   static $columns = [
     'abilities',

@@ -1,5 +1,6 @@
 import { inject } from '@adonisjs/core'
 import type { HttpContext } from '@adonisjs/core/http'
+import Application from '#models/application'
 import ApplicationTransformer from '#transformers/application_transformer'
 import ApplicationDraftService from '#services/application_draft_service'
 import { createApplicationValidator, updateApplicationValidator } from '#validators/application'
@@ -35,7 +36,13 @@ export default class ApplicationsController {
 
   async show({ auth, params, serialize }: HttpContext) {
     const user = auth.getUserOrFail()
-    const application = await this.draftService.findForUser(user.id, params.id)
+    const application = await Application.query()
+      .where('id', params.id)
+      .where('userId', user.id)
+      .preload('auditLogEntries', (query) => {
+        query.preload('actor').orderBy('createdAt', 'asc')
+      })
+      .firstOrFail()
 
     return serialize(ApplicationTransformer.transform(application))
   }

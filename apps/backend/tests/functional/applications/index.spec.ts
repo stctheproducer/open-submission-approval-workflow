@@ -17,9 +17,9 @@ test.group('Applications index', (group) => {
   }) => {
     const applicant = await UserFactory.create()
     const otherUser = await UserFactory.create()
-    const [app1, app2, app3] = await ApplicationFactory
-      .merge({ userId: applicant.id })
-      .createMany(3)
+    const [app1, app2, app3] = await ApplicationFactory.merge({ userId: applicant.id }).createMany(
+      3
+    )
     const otherApp = await ApplicationFactory.merge({ userId: otherUser.id }).create()
 
     const response = await client

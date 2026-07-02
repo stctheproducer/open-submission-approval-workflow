@@ -40,6 +40,9 @@ router
           .resource('applications', controllers.Applications)
           .apiOnly()
           .only(['index', 'store', 'show', 'update'])
+        router
+          .resource('applications.submissions', controllers.ApplicationSubmissions)
+          .only(['store'])
       })
       .prefix('applicant')
       .as('applicant')

@@ -2,6 +2,9 @@ import { test } from '@japa/runner'
 import testUtils from '@adonisjs/core/services/test_utils'
 import { UserFactory } from '#database/factories/user_factory'
 import { ApplicationFactory } from '#database/factories/application_factory'
+import { ApplicationAuditLogEntryFactory } from '#database/factories/application_audit_log_entry_factory'
+import { DateTime } from 'luxon'
+import { ApplicationStatus } from '#values/application_status'
 
 const NON_EXISTENT_ID = 99999999
 
@@ -38,6 +41,52 @@ test.group('Applications show', (group) => {
     })
 
     await db.assertHas('applications', { id: application.id, user_id: applicant.id })
+  })
+
+  test('shows an owned submitted application with the ordered history array (200)', async ({
+    client,
+  }) => {
+    const applicant = await UserFactory.create()
+    const application = await ApplicationFactory.merge({
+      userId: applicant.id,
+      status: ApplicationStatus.SUBMITTED,
+    }).create()
+
+    await ApplicationAuditLogEntryFactory.merge({
+      applicationId: application.id,
+      actorUserId: applicant.id,
+      previousStatus: ApplicationStatus.DRAFT,
+      nextStatus: ApplicationStatus.SUBMITTED,
+      createdAt: DateTime.now().minus({ minutes: 2 }),
+    }).create()
+    await ApplicationAuditLogEntryFactory.merge({
+      applicationId: application.id,
+      actorUserId: applicant.id,
+      previousStatus: ApplicationStatus.SUBMITTED,
+      nextStatus: ApplicationStatus.UNDER_REVIEW,
+      createdAt: DateTime.now().minus({ minutes: 1 }),
+    }).create()
+
+    const response = await client
+      .visit('applicant.applications.show', { id: application.id })
+      .withGuard('web')
+      .loginAs(applicant)
+
+    response.assertStatus(200)
+    response.assertBodyContains({
+      data: {
+        id: application.id,
+        status: ApplicationStatus.SUBMITTED,
+      },
+    })
+
+    const body = response.body() as any
+    if (!Array.isArray(body.data.history) || body.data.history.length !== 2) {
+      throw new Error(`Expected 2 history entries, got ${JSON.stringify(body.data.history)}`)
+    }
+    if (body.data.history[0].nextStatus !== ApplicationStatus.SUBMITTED) {
+      throw new Error(`Expected oldest history first, got ${JSON.stringify(body.data.history)}`)
+    }
   })
 
   test('returns 404 for a foreign or non-existent application', async ({ client }) => {
