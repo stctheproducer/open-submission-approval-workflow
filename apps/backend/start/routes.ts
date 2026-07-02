@@ -61,6 +61,12 @@ router
             'store',
           ])
           .where('applicationId', router.matchers.number())
+        router
+          .post('applications/:id/change-request', [
+            controllers.ApplicationChangeRequests,
+            'store',
+          ])
+          .where('id', router.matchers.number())
       })
       .prefix('reviewer')
       .as('reviewer')

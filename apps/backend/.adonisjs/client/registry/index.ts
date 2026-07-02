@@ -90,6 +90,12 @@ const routes = {
     tokens: [{"old":"/api/v1/reviewer/applications/:applicationId/approvals","type":0,"val":"api","end":""},{"old":"/api/v1/reviewer/applications/:applicationId/approvals","type":0,"val":"v1","end":""},{"old":"/api/v1/reviewer/applications/:applicationId/approvals","type":0,"val":"reviewer","end":""},{"old":"/api/v1/reviewer/applications/:applicationId/approvals","type":0,"val":"applications","end":""},{"old":"/api/v1/reviewer/applications/:applicationId/approvals","type":1,"val":"applicationId","end":""},{"old":"/api/v1/reviewer/applications/:applicationId/approvals","type":0,"val":"approvals","end":""}],
     types: placeholder as Registry['reviewer.application_approvals.store']['types'],
   },
+  'reviewer.application_change_requests.store': {
+    methods: ["POST"],
+    pattern: '/api/v1/reviewer/applications/:id/change-request',
+    tokens: [{"old":"/api/v1/reviewer/applications/:id/change-request","type":0,"val":"api","end":""},{"old":"/api/v1/reviewer/applications/:id/change-request","type":0,"val":"v1","end":""},{"old":"/api/v1/reviewer/applications/:id/change-request","type":0,"val":"reviewer","end":""},{"old":"/api/v1/reviewer/applications/:id/change-request","type":0,"val":"applications","end":""},{"old":"/api/v1/reviewer/applications/:id/change-request","type":1,"val":"id","end":""},{"old":"/api/v1/reviewer/applications/:id/change-request","type":0,"val":"change-request","end":""}],
+    types: placeholder as Registry['reviewer.application_change_requests.store']['types'],
+  },
 } as const satisfies Record<string, AdonisEndpoint>
 
 export { routes }

@@ -175,4 +175,16 @@ export interface Registry {
       errorResponse: ExtractErrorResponse<Awaited<ReturnType<import('#controllers/application_approvals_controller').default['store']>>>
     }
   }
+  'reviewer.application_change_requests.store': {
+    methods: ["POST"]
+    pattern: '/api/v1/reviewer/applications/:id/change-request'
+    types: {
+      body: ExtractBody<InferInput<(typeof import('#validators/application_change_request').requestApplicationChangeValidator)>>
+      paramsTuple: [ParamValue]
+      params: { id: ParamValue }
+      query: {}
+      response: ExtractResponse<Awaited<ReturnType<import('#controllers/application_change_requests_controller').default['store']>>>
+      errorResponse: ExtractErrorResponse<Awaited<ReturnType<import('#controllers/application_change_requests_controller').default['store']>>> | { status: 422; response: { errors: SimpleError[] } }
+    }
+  }
 }

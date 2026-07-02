@@ -1,6 +1,7 @@
 ---
 capability: application-change-request
 change: application-change-request
+synced: 2026-07-02
 ---
 
 # Delta — application-change-request

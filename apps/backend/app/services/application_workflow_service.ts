@@ -1,0 +1,42 @@
+import db from '@adonisjs/lucid/services/db'
+import Application from '#models/application'
+import User from '#models/user'
+import { ApplicationStatus } from '#values/application_status'
+import ApplicationChangeRequestConflictException from '#exceptions/application_change_request_conflict_exception'
+import ApplicationAuditEntry from '#models/application_audit_entry'
+
+export default class ApplicationWorkflowService {
+  async requestChange(application: Application, reviewer: User, comment: string) {
+    const updated = await db.transaction(async (trx) => {
+      const locked = await Application.findOrFail(application.id, { client: trx })
+      locked.useTransaction(trx)
+
+      if (locked.status !== ApplicationStatus.UNDER_REVIEW) {
+        throw new ApplicationChangeRequestConflictException()
+      }
+
+      locked.status = ApplicationStatus.CHANGES_REQUESTED
+      await locked.save()
+
+      const entry = new ApplicationAuditEntry()
+      entry.useTransaction(trx)
+      entry.applicationId = locked.id
+      entry.actorId = reviewer.id
+      entry.fromStatus = ApplicationStatus.UNDER_REVIEW
+      entry.toStatus = ApplicationStatus.CHANGES_REQUESTED
+      entry.comment = comment
+      await entry.save()
+
+      return locked
+    })
+
+    return Application.query()
+      .where('id', updated.id)
+      .preload('user')
+      .preload('assignedReviewer')
+      .preload('auditLogEntries', (query) => {
+        query.preload('actor').orderBy('createdAt', 'asc')
+      })
+      .firstOrFail()
+  }
+}
