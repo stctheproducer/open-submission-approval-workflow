@@ -7,9 +7,10 @@ const THEME_ORDER = ["light", "system", "dark"] as const
 
 type ThemeToggleProps = {
   className?: string
+  fixed?: boolean
 }
 
-export function ThemeToggle({ className }: ThemeToggleProps) {
+export function ThemeToggle({ className, fixed = true }: ThemeToggleProps) {
   const { theme, setTheme } = useTheme()
 
   const currentTheme = theme === "system" ? "system" : theme
@@ -31,7 +32,9 @@ export function ThemeToggle({ className }: ThemeToggleProps) {
         setTheme(nextTheme)
       }}
       className={cn(
-        "fixed right-6 top-6 z-50 inline-flex size-10 items-center justify-center rounded-full border border-border bg-background/90 text-muted-foreground shadow-sm backdrop-blur transition hover:text-foreground focus:outline-none focus:ring-2 focus:ring-primary/30 sm:right-10 sm:top-10 lg:right-12 lg:top-12",
+        fixed
+          ? "fixed right-6 top-6 z-50 inline-flex size-10 items-center justify-center rounded-full border border-border bg-background/90 text-muted-foreground shadow-sm backdrop-blur transition hover:text-foreground focus:outline-none focus:ring-2 focus:ring-primary/30 sm:right-10 sm:top-10 lg:right-12 lg:top-12"
+          : "inline-flex size-10 items-center justify-center rounded-full border border-border bg-background text-muted-foreground shadow-sm transition hover:text-foreground focus:outline-none focus:ring-2 focus:ring-primary/30",
         className,
       )}
     >

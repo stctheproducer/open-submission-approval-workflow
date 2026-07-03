@@ -2,7 +2,6 @@ import db from '@adonisjs/lucid/services/db'
 import Application from '#models/application'
 import type User from '#models/user'
 import { ApplicationStatus } from '#values/application_status'
-import ApplicationAuditEntry from '#models/application_audit_entry'
 import ApplicationStatusTransition from '#models/application_status_transition'
 import ApplicationTransitionConflictException from '#exceptions/application_transition_conflict_exception'
 
@@ -18,15 +17,6 @@ export default class ApplicationWorkflowService {
 
       locked.status = ApplicationStatus.DRAFT
       await locked.save()
-
-      const entry = new ApplicationAuditEntry()
-      entry.useTransaction(trx)
-      entry.applicationId = locked.id
-      entry.actorId = applicant.id
-      entry.fromStatus = ApplicationStatus.CHANGES_REQUESTED
-      entry.toStatus = ApplicationStatus.DRAFT
-      entry.comment = 'Reopened by applicant'
-      await entry.save()
 
       const transition = new ApplicationStatusTransition()
       transition.useTransaction(trx)
@@ -60,16 +50,8 @@ export default class ApplicationWorkflowService {
       }
 
       locked.status = ApplicationStatus.CHANGES_REQUESTED
+      locked.assignedReviewerId = null
       await locked.save()
-
-      const entry = new ApplicationAuditEntry()
-      entry.useTransaction(trx)
-      entry.applicationId = locked.id
-      entry.actorId = reviewer.id
-      entry.fromStatus = ApplicationStatus.UNDER_REVIEW
-      entry.toStatus = ApplicationStatus.CHANGES_REQUESTED
-      entry.comment = comment
-      await entry.save()
 
       const transition = new ApplicationStatusTransition()
       transition.useTransaction(trx)
@@ -104,15 +86,6 @@ export default class ApplicationWorkflowService {
 
       locked.status = ApplicationStatus.REJECTED
       await locked.save()
-
-      const entry = new ApplicationAuditEntry()
-      entry.useTransaction(trx)
-      entry.applicationId = locked.id
-      entry.actorId = reviewer.id
-      entry.fromStatus = ApplicationStatus.UNDER_REVIEW
-      entry.toStatus = ApplicationStatus.REJECTED
-      entry.comment = comment
-      await entry.save()
 
       const transition = new ApplicationStatusTransition()
       transition.useTransaction(trx)

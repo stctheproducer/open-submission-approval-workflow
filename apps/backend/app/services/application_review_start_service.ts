@@ -1,6 +1,5 @@
 import db from '@adonisjs/lucid/services/db'
 import Application from '#models/application'
-import ApplicationAuditLogEntry from '#models/application_audit_log_entry'
 import ApplicationStatusTransition from '#models/application_status_transition'
 import type User from '#models/user'
 import { ApplicationStatus } from '#values/application_status'
@@ -18,15 +17,6 @@ export default class ApplicationReviewStartService {
       locked.status = ApplicationStatus.UNDER_REVIEW
       locked.assignedReviewerId = reviewer.id
       await locked.save()
-
-      const entry = new ApplicationAuditLogEntry()
-      entry.useTransaction(trx)
-      entry.applicationId = locked.id
-      entry.actorUserId = reviewer.id
-      entry.previousStatus = ApplicationStatus.SUBMITTED
-      entry.nextStatus = ApplicationStatus.UNDER_REVIEW
-      entry.comment = null
-      await entry.save()
 
       const transition = new ApplicationStatusTransition()
       transition.useTransaction(trx)

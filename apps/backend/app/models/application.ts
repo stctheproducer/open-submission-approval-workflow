@@ -2,7 +2,6 @@ import { ApplicationSchema } from '#database/schema'
 import { belongsTo, hasMany, scope } from '@adonisjs/lucid/orm'
 import type { BelongsTo, HasMany } from '@adonisjs/lucid/types/relations'
 import User from '#models/user'
-import ApplicationAuditEntry from '#models/application_audit_entry'
 import ApplicationStatusTransition from '#models/application_status_transition'
 import { ApplicationStatus } from '#values/application_status'
 
@@ -12,9 +11,6 @@ export default class Application extends ApplicationSchema {
 
   @belongsTo(() => User, { foreignKey: 'assignedReviewerId' })
   declare assignedReviewer: BelongsTo<typeof User>
-
-  @hasMany(() => ApplicationAuditEntry)
-  declare auditLogEntries: HasMany<typeof ApplicationAuditEntry>
 
   @hasMany(() => ApplicationStatusTransition)
   declare statusTransitions: HasMany<typeof ApplicationStatusTransition>

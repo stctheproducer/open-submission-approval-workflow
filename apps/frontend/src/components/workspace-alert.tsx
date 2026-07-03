@@ -1,14 +1,20 @@
 import type { ReactNode } from "react"
 import { AlertCircle, CircleCheckBig } from "lucide-react"
 
+import { Button } from "@/components/ui/button"
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
 
 export function ErrorAlert({
   title = "Action unavailable",
   children,
+  action,
 }: {
   title?: string
   children: ReactNode
+  action?: {
+    label: string
+    onClick: () => void
+  }
 }) {
   return (
     <Alert
@@ -17,7 +23,14 @@ export function ErrorAlert({
     >
       <AlertCircle aria-hidden="true" />
       <AlertTitle>{title}</AlertTitle>
-      <AlertDescription>{children}</AlertDescription>
+      <AlertDescription className="flex flex-col gap-3">
+        <span>{children}</span>
+        {action ? (
+          <Button size="sm" variant="outline" onClick={action.onClick}>
+            {action.label}
+          </Button>
+        ) : null}
+      </AlertDescription>
     </Alert>
   )
 }
@@ -30,7 +43,7 @@ export function SuccessAlert({
   children: ReactNode
 }) {
   return (
-    <Alert className="rounded-[1.5rem] border-primary/20 bg-primary/8 text-foreground after:bg-primary">
+    <Alert className="rounded-[1.5rem] border border-primary/20 bg-primary/8 text-foreground after:bg-primary">
       <CircleCheckBig aria-hidden="true" />
       <AlertTitle>{title}</AlertTitle>
       <AlertDescription className="text-foreground/80">

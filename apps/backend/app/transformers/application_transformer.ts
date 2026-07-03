@@ -4,23 +4,49 @@ import UserTransformer from '#transformers/user_transformer'
 import { BaseTransformer } from '@adonisjs/core/transformers'
 import drive from '@adonisjs/drive/services/main'
 import { ApplicationStatus } from '#values/application_status'
+import { appUrl } from '#config/app'
+
+type WorkflowHistoryEntry = {
+  id: number
+  previousStatus?: string | null
+  nextStatus?: string | null
+  comment?: string | null
+  createdAt: unknown
+  actor?: unknown
+}
+
+function toHistoryTransformerInput(entry: WorkflowHistoryEntry) {
+  return {
+    id: entry.id,
+    previousStatus: entry.previousStatus ?? null,
+    nextStatus: entry.nextStatus ?? null,
+    comment: entry.comment ?? null,
+    createdAt: entry.createdAt,
+    actor: entry.actor ?? null,
+  }
+}
+
+async function attachmentPublicUrl(key: string) {
+  const path = await drive.use().getUrl(key)
+  if (path.startsWith('http://') || path.startsWith('https://')) {
+    return path
+  }
+  return new URL(path, appUrl).href
+}
 
 export default class ApplicationTransformer extends BaseTransformer<Application> {
   async toObject() {
     const transitions = this.resource.statusTransitions ?? []
     const attachmentUrl = this.resource.attachmentKey
-      ? await drive.use().getUrl(this.resource.attachmentKey)
+      ? await attachmentPublicUrl(this.resource.attachmentKey)
       : null
     return {
       id: this.resource.id,
-      title: this.resource.title ?? this.resource.organizationName,
+      title: this.resource.title,
       category: this.resource.category,
       description: this.resource.description,
       amount: this.resource.amount,
       status: this.resource.status,
-      organizationName: this.resource.organizationName,
-      contactName: this.resource.contactName,
-      contactEmail: this.resource.contactEmail,
       applicant: this.resource.user ? UserTransformer.transform(this.resource.user) : null,
       assignedReviewer: this.resource.assignedReviewer
         ? UserTransformer.transform(this.resource.assignedReviewer)
@@ -39,7 +65,9 @@ export default class ApplicationTransformer extends BaseTransformer<Application>
           ? 'ready'
           : 'other',
       statusTransitions: ApplicationStatusTransitionTransformer.transform(transitions),
-      history: ApplicationStatusTransitionTransformer.transform(transitions),
+      history: ApplicationStatusTransitionTransformer.transform(
+        transitions.map((entry) => toHistoryTransformerInput(entry as WorkflowHistoryEntry)) as any
+      ),
     }
   }
 

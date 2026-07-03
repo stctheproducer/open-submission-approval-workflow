@@ -1,6 +1,5 @@
 import { inject } from '@adonisjs/core'
 import type { HttpContext } from '@adonisjs/core/http'
-import Application from '#models/application'
 import ApplicationTransformer from '#transformers/application_transformer'
 import ApplicationDraftService from '#services/application_draft_service'
 import { createApplicationValidator, updateApplicationValidator } from '#validators/application'
@@ -24,11 +23,7 @@ export default class ApplicationsController {
     const user = auth.getUserOrFail()
     const payload = await request.validateUsing(createApplicationValidator)
 
-    const application = await this.draftService.create(user.id)
-    if (Object.keys(payload).length > 0) {
-      application.merge(payload)
-      await application.save()
-    }
+    const application = await this.draftService.create(user.id, payload)
 
     response.status(201)
     return serialize(ApplicationTransformer.transform(application))
@@ -36,13 +31,7 @@ export default class ApplicationsController {
 
   async show({ auth, params, serialize }: HttpContext) {
     const user = auth.getUserOrFail()
-    const application = await Application.query()
-      .where('id', params.id)
-      .where('userId', user.id)
-      .preload('statusTransitions', (query) => {
-        query.preload('actor').orderBy('createdAt', 'asc')
-      })
-      .firstOrFail()
+    const application = await this.draftService.findForUser(user.id, params.id)
 
     return serialize(ApplicationTransformer.transform(application))
   }

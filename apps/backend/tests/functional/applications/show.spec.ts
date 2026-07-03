@@ -36,9 +36,10 @@ test.group('Applications show', (group) => {
       data: {
         id: application.id,
         status: 'draft',
-        organizationName: application.organizationName,
-        contactName: application.contactName,
-        contactEmail: application.contactEmail,
+        title: application.title,
+        category: application.category,
+        description: application.description,
+        amount: application.amount,
       },
     })
 
@@ -93,6 +94,11 @@ test.group('Applications show', (group) => {
     }
     if (body.data.history[0].nextStatus !== ApplicationStatus.SUBMITTED) {
       throw new Error(`Expected oldest history first, got ${JSON.stringify(body.data.history)}`)
+    }
+    if (body.data.history[0].actor?.id !== applicant.id) {
+      throw new Error(
+        `Expected history actor to be preloaded, got ${JSON.stringify(body.data.history)}`
+      )
     }
   })
 

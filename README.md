@@ -13,7 +13,7 @@ The implementation is intentionally optimized around the assessment rubric: work
 
 The core business record is an `Application`.
 
-Planned workflow states:
+Implemented workflow states:
 
 - `DRAFT`
 - `SUBMITTED`
@@ -33,10 +33,17 @@ Core workflow rules:
 
 ## Live URL
 
-- App URL: `TBD`
-- Test credentials: `TBD`
+- App URL: https://apptest.chandamulenga.com
+- Backend API: https://api.apptest.chandamulenga.com (proxied through `/api` on the frontend)
 
-This section will be updated once the project is deployed on Sevalla.
+### Test credentials
+
+| Role | Email | Password |
+|------|-------|----------|
+| Applicant | `applicant@example.com` | `password1234` |
+| Reviewer | `reviewer@example.com` | `password1234` |
+
+The hosted app uses the architecture described below with seeded applicant and reviewer accounts for testing.
 
 ## Tech Stack
 
@@ -48,7 +55,7 @@ This section will be updated once the project is deployed on Sevalla.
 - **Cross-origin support**: backend CORS is enabled for the frontend origin in production
 - **Database**: PostgreSQL
 - **Local infrastructure**: Docker Compose for PostgreSQL and Mailpit
-- **Hosting target**: Sevalla
+- **Hosting**: Sevalla (frontend at `apptest.chandamulenga.com`, backend at `api.apptest.chandamulenga.com`)
 
 ## Architecture
 
@@ -63,8 +70,8 @@ flowchart LR
 
 Deployment shape:
 
-- backend on an `api` subdomain
-- frontend on the main app domain
+- frontend at `apptest.chandamulenga.com`
+- backend at `api.apptest.chandamulenga.com`
 - Sevalla redirects proxy `/api` requests from the frontend app to the backend service
 - session auth uses cookie-based requests between the browser and backend
 
@@ -97,13 +104,15 @@ This copies `apps/backend/.env.example` to `apps/backend/.env` if needed and gen
 
 The bootstrap command is Node-based, so it works in macOS, Linux, and native Windows shells without requiring Bash or WSL.
 
+If `pnpm run setup` reports that the shell configuration already contains a pnpm section, rerun it with `--force` to replace the existing entry.
+
 ```bash
-pnpm setup
+pnpm run setup
 ```
 
 ### Start local infrastructure
 
-This starts PostgreSQL and Mailpit using the backend compose file.
+This starts PostgreSQL (development and test databases) and Mailpit using the backend compose file.
 
 ```bash
 pnpm db:up
@@ -152,7 +161,7 @@ pnpm typecheck
 
 ## Data Model
 
-The current planned data model is intentionally simple and relational.
+The current data model is intentionally simple and relational.
 
 ### Applications
 
@@ -188,7 +197,7 @@ Fixed lists such as categories are stored as backend-owned code-level option set
 
 The API is designed around **explicit transition resources** instead of a generic status patch endpoint.
 
-Examples of planned transition surfaces:
+Implemented transition surfaces:
 
 - create and edit applications as normal CRUD around `Application`
 - submit a draft as a dedicated submission transition
@@ -207,20 +216,20 @@ This was chosen to make:
 
 The app uses **session authentication** because the browser talks to the backend through cookie-based requests, with the frontend served on the main app domain and the backend served from the `api` subdomain.
 
-Current planned model:
+Implemented authorization model:
 
-- seeded users for at least one Applicant and one Reviewer
 - server-enforced role checks on every mutation
 - explicit applicant ownership checks
 - explicit reviewer assignment checks once an application is in `UNDER_REVIEW`
+- seeded users for at least one Applicant and one Reviewer
 
 Frontend route guards improve UX, but backend enforcement is the real security boundary.
 
 ## Error Handling
 
-The backend is planned to use **Problem Details** style error responses from the global exception handler in `apps/backend/app/exceptions/handler.ts`.
+The backend uses **Problem Details** style error responses from the global exception handler in `apps/backend/app/exceptions/handler.ts`.
 
-Target behavior:
+Current behavior:
 
 - validation errors return structured field-aware responses
 - authorization failures return clear forbidden responses
@@ -233,31 +242,38 @@ Frontend requests use the browser session cookie, so the production backend must
 
 The test strategy is intentionally backend-heavy because that is where the assessment risk is concentrated.
 
-Planned baseline:
+Current baseline:
 
-- unit tests for workflow transition rules
-- unit tests for legal and illegal transitions
-- unit tests for comment-required transitions
-- API tests for authorization and forbidden actions
-- API tests for illegal transitions returning `409`
-- frontend tests only if they stay cheap and high-signal
+- 75 backend functional tests covering application lifecycle, workflow transitions, authorization, conflict handling, attachments, and session login
+- frontend tests for routing, review workflow helpers, and component rendering
 
 ## Deployment
 
-Target deployment:
+### Hosting shape
 
-- **Backend**: containerized AdonisJS app on Sevalla
-- **Frontend**: static site deployment on Sevalla
-- **Routing**: backend on an `api` subdomain, frontend on the main app domain, with Sevalla redirects proxying `/api` to the backend
+- **Backend**: containerized AdonisJS app on Sevalla at `api.apptest.chandamulenga.com` (`apps/backend/Dockerfile`, multi-stage Node.js build)
+- **Frontend**: static site build on Sevalla at `apptest.chandamulenga.com` (Vite production output)
+- **Routing**: Sevalla redirects proxy `/api` requests from the frontend app to the backend service
 - **Database**: managed PostgreSQL
 
-The backend Dockerfile lives at `apps/backend/Dockerfile`.
+### Session auth and CORS
+
+The browser talks to the backend through cookie-based session requests. In production:
+
+- the frontend static site and the backend API are on different origins (main domain vs `api` subdomain)
+- the Sevalla `/api` proxy makes the frontend's `/api` requests reach the backend transparently
+- the backend CORS config (`apps/backend/config/cors.ts`) reads `CORS_ORIGIN` from the environment as a comma-separated allowlist and enables `credentials: true` so that session cookies travel cross-origin
+- in development, CORS allows all origins; in production, only the configured frontend origin is allowed
+
+### What the assessor can verify locally
+
+The local setup mirrors the production shape: the backend runs with `SESSION_DRIVER=cookie`, the frontend Vite dev server proxies `/api` to the backend, and the seeded users let you sign in as either role without any additional configuration.
 
 ### AdonisJS Plus note
 
-I have a paid personal AdonisJS Plus subscription and I am using Flow during development to stay aligned with the standards and intended architecture of the AdonisJS ecosystem. This helps me move faster on backend implementation and focus more of the exercise on product development instead of manually composing and evaluating a larger mix of Node.js packages and conventions.
+I used a paid personal AdonisJS Plus subscription and Flow during backend development to stay aligned with the standards and intended architecture of the AdonisJS ecosystem. That helped me keep the implementation focused on workflow behavior instead of manually composing and evaluating a larger mix of Node.js packages and conventions.
 
-This is a development-time accelerator, not a final deployment requirement. Before the final deployed version is handed over, the `@adonisplus/*` packages will be removed because they rely on a personal authentication token that I am not permitted to share.
+I verified the resulting architecture, APIs, workflow rules, and deployment implications directly in the repository.
 
 ## Architectural Decisions
 
@@ -268,16 +284,15 @@ Recorded ADRs:
 
 ## Delivery Workflow
 
-Development in this repo follows a PRD-driven vertical-slice workflow so the project has a visible issue -> PR -> merge trail instead of one opaque implementation drop.
+Development in this repo follows an issue -> PR -> review -> merge trail so the submission history stays legible instead of collapsing into one opaque implementation drop.
 
-The intended flow is:
+The delivery flow is:
 
-1. create a PRD issue for a major assessment concern
-2. split that PRD into thin vertical-slice implementation issues
-3. implement one or more closely related slices on a branch
-4. open a PR for that coherent review unit
-5. require human review before merge
-6. merge only once the slice is correct, tested, and documented
+1. capture the work as a GitHub issue
+2. deliver the change in a reviewable PR with a Conventional Commit title (`<type>(<scope>): <short imperative summary>`)
+3. use the PR template to describe the change, the related issue, and the verification that was performed
+4. require human review before merge
+5. merge only once the slice is correct, tested, and documented
 
 This approach is deliberate for the assessment. It keeps scope under control, produces a readable delivery history, and makes workflow, authorization, and testing decisions easier to review incrementally.
 
@@ -313,11 +328,10 @@ If I had more time after the core rubric is solid, I would prioritize:
 
 | Tool | How it was used | What I verified manually |
 | ---- | --------------- | ------------------------ |
-| Codex / GPT-5 | Planning the architecture, stress-testing workflow decisions, drafting repo guidance, and generating setup/documentation scaffolding | I reviewed the resulting repo rules, setup commands, ADRs, and documentation choices directly |
-| AdonisJS Plus Flow | Used during backend development to keep the AdonisJS application aligned with framework-native patterns and standards so I can focus effort on product behavior | I am responsible for validating the resulting architecture, APIs, workflow rules, and deployment implications myself |
-| `grill-with-docs` | Used to sharpen the workflow, naming, deployment, and documentation decisions before implementation | I reviewed and accepted the resulting glossary terms, ADRs, and architectural constraints directly |
+| Codex / GPT-5 | Drafted and refined repository docs, stress-tested workflow decisions, and helped align the README with the implemented app surface | I reviewed the final README, ADRs, scripts, routes, and deployment notes against the repository state |
+| AdonisJS Plus Flow | Used during backend development to keep the AdonisJS implementation aligned with framework-native patterns and standards | I reviewed the resulting architecture, APIs, workflow rules, and deployment implications directly in the repository |
+| `grill-with-docs` | Used to sharpen the workflow, naming, deployment, and documentation decisions before implementation | I reviewed the resulting glossary terms, ADRs, and architectural constraints directly |
 | `to-prd` | Used to convert the agreed design into PRD issues in GitHub | I reviewed the PRD structure, seams, and issue scope before publishing |
-| `to-issues` | Planned for breaking PRDs into vertical-slice implementation issues that can move through PR review cleanly | I will review issue boundaries and make sure each slice is coherent, testable, and appropriately scoped |
-| AI-assisted development workflow | Used for design iteration, implementation planning, and documentation shaping | I am responsible for validating every code path, workflow rule, and setup instruction before submission |
+| `to-issues` | Used to break PRDs into vertical-slice implementation issues that can move through PR review cleanly | I reviewed the issue boundaries and confirmed each slice was coherent and testable |
 
-This section will be expanded with implementation-specific entries as development continues.
+The final submission was manually verified against the repository state after the AI-assisted drafting work.

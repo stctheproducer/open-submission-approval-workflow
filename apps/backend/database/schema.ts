@@ -7,69 +7,21 @@
 import { BaseModel, column } from '@adonisjs/lucid/orm'
 import { DateTime } from 'luxon'
 
-export class ApplicationSchema extends BaseModel {
+export class ApplicationStatusTransitionSchema extends BaseModel {
   static $columns = [
-    'amount',
-    'assignedReviewerId',
-    'attachmentKey',
-    'contactEmail',
-    'contactName',
-    'createdAt',
-    'category',
-    'id',
-    'organizationName',
-    'description',
-    'title',
-    'status',
-    'updatedAt',
-    'userId',
-  ] as const
-  $columns = ApplicationSchema.$columns
-  @column()
-  declare amount: string | null
-  @column()
-  declare assignedReviewerId: number | null
-  @column()
-  declare attachmentKey: string | null
-  @column()
-  declare contactEmail: string | null
-  @column()
-  declare contactName: string | null
-  @column.dateTime({ autoCreate: true })
-  declare createdAt: DateTime
-  @column()
-  declare category: string | null
-  @column({ isPrimary: true })
-  declare id: number
-  @column()
-  declare description: string | null
-  @column()
-  declare organizationName: string | null
-  @column()
-  declare title: string | null
-  @column()
-  declare status: string
-  @column.dateTime({ autoCreate: true, autoUpdate: true })
-  declare updatedAt: DateTime | null
-  @column()
-  declare userId: number | null
-}
-
-export class ApplicationAuditLogEntrySchema extends BaseModel {
-  static $columns = [
-    'applicationId',
     'actorUserId',
+    'applicationId',
     'comment',
     'createdAt',
     'id',
     'nextStatus',
     'previousStatus',
   ] as const
-  $columns = ApplicationAuditLogEntrySchema.$columns
+  $columns = ApplicationStatusTransitionSchema.$columns
   @column()
-  declare applicationId: number
+  declare actorUserId: number | null
   @column()
-  declare actorUserId: number
+  declare applicationId: number | null
   @column()
   declare comment: string | null
   @column.dateTime({ autoCreate: true })
@@ -80,6 +32,45 @@ export class ApplicationAuditLogEntrySchema extends BaseModel {
   declare nextStatus: string
   @column()
   declare previousStatus: string
+}
+
+export class ApplicationSchema extends BaseModel {
+  static $columns = [
+    'amount',
+    'assignedReviewerId',
+    'attachmentKey',
+    'category',
+    'createdAt',
+    'description',
+    'id',
+    'status',
+    'title',
+    'updatedAt',
+    'userId',
+  ] as const
+  $columns = ApplicationSchema.$columns
+  @column()
+  declare amount: string
+  @column()
+  declare assignedReviewerId: number | null
+  @column()
+  declare attachmentKey: string | null
+  @column()
+  declare category: string
+  @column.dateTime({ autoCreate: true })
+  declare createdAt: DateTime
+  @column()
+  declare description: string
+  @column({ isPrimary: true })
+  declare id: number
+  @column()
+  declare status: string
+  @column()
+  declare title: string
+  @column.dateTime({ autoCreate: true, autoUpdate: true })
+  declare updatedAt: DateTime | null
+  @column()
+  declare userId: number
 }
 
 export class AuthAccessTokenSchema extends BaseModel {

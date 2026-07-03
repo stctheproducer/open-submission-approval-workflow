@@ -1,9 +1,55 @@
+# Backend image builds use the monorepo root as context (see apps/backend/Dockerfile).
+
+# Version control and CI
 .git
-.turbo
+.github
+.jj
+
+# Dependencies (reinstalled in the image)
 node_modules
-apps/*/node_modules
+**/node_modules
+.pnpm-store
+
+# Build caches and outputs
+.turbo
+**/build
+**/dist
+**/dist-ssr
+**/coverage
+apps/backend/tmp
+apps/backend/storage
+
+# Secrets and local environment
+.env
+.env.*
+**/.env
+**/.env.*
+
+# Frontend and unused workspace packages
 apps/frontend
-apps/frontend-starter
+
+# Docs, scripts, and local-only tooling
 docs
 scripts
+tmp
+.flow
+.agents
+.cursor
+.opencode
+.impeccable
+
+# Root metadata not required for `ace build`
+*.md
+skills-lock.json
+.editorconfig
+.prettierignore
+
+# Backend tests (not used in production image build)
+apps/backend/tests
+
+# Logs, editors, and OS files
 *.log
+.DS_Store
+.fleet
+.idea
+.vscode

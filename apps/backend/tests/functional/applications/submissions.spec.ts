@@ -2,9 +2,7 @@ import { test } from '@japa/runner'
 import testUtils from '@adonisjs/core/services/test_utils'
 import { UserFactory } from '#database/factories/user_factory'
 import { ApplicationFactory } from '#database/factories/application_factory'
-import { ApplicationAuditLogEntryFactory } from '#database/factories/application_audit_log_entry_factory'
 import { ApplicationStatus } from '#values/application_status'
-import { ApplicationAuditEntryFactory } from '#database/factories/application_audit_entry_factory'
 import { ApplicationStatusTransitionFactory } from '#database/factories/application_status_transition_factory'
 import { assertProblemDetails } from './problem_details.js'
 
@@ -56,9 +54,14 @@ test.group('Application submissions', (group) => {
     ) {
       throw new Error(`Expected submission history entry, got ${JSON.stringify(body.data.history)}`)
     }
+    if (body.data.history[0].actor?.id !== applicant.id) {
+      throw new Error(
+        `Expected submission actor to be preloaded, got ${JSON.stringify(body.data.history)}`
+      )
+    }
 
     await db.assertHas('applications', { id: application.id, status: ApplicationStatus.SUBMITTED })
-    await db.assertHas('application_audit_log_entries', {
+    await db.assertHas('application_status_transitions', {
       application_id: application.id,
       actor_user_id: applicant.id,
       previous_status: ApplicationStatus.DRAFT,
@@ -76,7 +79,7 @@ test.group('Application submissions', (group) => {
       status: ApplicationStatus.CHANGES_REQUESTED,
     }).create()
 
-    await ApplicationAuditLogEntryFactory.merge({
+    await ApplicationStatusTransitionFactory.merge({
       applicationId: application.id,
       actorUserId: applicant.id,
       previousStatus: ApplicationStatus.DRAFT,
@@ -87,16 +90,8 @@ test.group('Application submissions', (group) => {
     await ApplicationStatusTransitionFactory.merge({
       applicationId: application.id,
       actorUserId: applicant.id,
-      previousStatus: ApplicationStatus.DRAFT,
-      nextStatus: ApplicationStatus.SUBMITTED,
-      comment: null,
-    }).create()
-
-    await ApplicationAuditEntryFactory.merge({
-      applicationId: application.id,
-      actorId: applicant.id,
-      fromStatus: ApplicationStatus.SUBMITTED,
-      toStatus: ApplicationStatus.CHANGES_REQUESTED,
+      previousStatus: ApplicationStatus.SUBMITTED,
+      nextStatus: ApplicationStatus.CHANGES_REQUESTED,
       comment: 'Please update the budget section',
     }).create()
 
@@ -126,18 +121,24 @@ test.group('Application submissions', (group) => {
       throw new Error(`Expected revision history entries, got ${JSON.stringify(body.data.history)}`)
     }
 
-    const lastEntry = body.data.history[body.data.history.length - 1]
-    if (
-      lastEntry.previousStatus !== ApplicationStatus.DRAFT ||
-      lastEntry.nextStatus !== ApplicationStatus.SUBMITTED
-    ) {
+    const submissionEntry = body.data.history.find(
+      (entry: { previousStatus: string; nextStatus: string }) =>
+        entry.previousStatus === ApplicationStatus.DRAFT &&
+        entry.nextStatus === ApplicationStatus.SUBMITTED
+    )
+    if (!submissionEntry) {
       throw new Error(
-        `Expected revision-round submission history entry, got ${JSON.stringify(lastEntry)}`
+        `Expected revision-round submission history entry, got ${JSON.stringify(body.data.history)}`
+      )
+    }
+    if (submissionEntry.actor?.id !== applicant.id) {
+      throw new Error(
+        `Expected revision-round actor to be preloaded, got ${JSON.stringify(submissionEntry)}`
       )
     }
 
     await db.assertHas('applications', { id: application.id, status: ApplicationStatus.SUBMITTED })
-    await db.assertHas('application_audit_log_entries', {
+    await db.assertHas('application_status_transitions', {
       application_id: application.id,
       actor_user_id: applicant.id,
       previous_status: ApplicationStatus.DRAFT,

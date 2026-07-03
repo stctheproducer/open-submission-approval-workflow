@@ -4,7 +4,7 @@ import { UserFactory } from '#database/factories/user_factory'
 import User from '#models/user'
 import { ApplicationFactory } from '#database/factories/application_factory'
 import { ApplicationStatus } from '#values/application_status'
-import { ApplicationAuditEntryFactory } from '#database/factories/application_audit_entry_factory'
+import { ApplicationStatusTransitionFactory } from '#database/factories/application_status_transition_factory'
 import { assertProblemDetails } from './problem_details.js'
 
 async function createReviewer() {
@@ -89,11 +89,11 @@ test.group('Application rejections', (group) => {
       description: 'Needs rejection comment',
       amount: '4200.00',
     }).create()
-    await ApplicationAuditEntryFactory.merge({
+    await ApplicationStatusTransitionFactory.merge({
       applicationId: application.id,
-      actorId: reviewer.id,
-      fromStatus: ApplicationStatus.SUBMITTED,
-      toStatus: ApplicationStatus.UNDER_REVIEW,
+      actorUserId: reviewer.id,
+      previousStatus: ApplicationStatus.SUBMITTED,
+      nextStatus: ApplicationStatus.UNDER_REVIEW,
       comment: 'Initial review start',
     }).create()
 
@@ -113,11 +113,11 @@ test.group('Application rejections', (group) => {
       status: ApplicationStatus.REJECTED,
       assigned_reviewer_id: reviewer.id,
     })
-    await db.assertHas('application_audit_entries', {
+    await db.assertHas('application_status_transitions', {
       application_id: application.id,
-      actor_id: reviewer.id,
-      from_status: ApplicationStatus.UNDER_REVIEW,
-      to_status: ApplicationStatus.REJECTED,
+      actor_user_id: reviewer.id,
+      previous_status: ApplicationStatus.UNDER_REVIEW,
+      next_status: ApplicationStatus.REJECTED,
       comment: 'Does not meet requirements',
     })
   })
@@ -147,7 +147,7 @@ test.group('Application rejections', (group) => {
       assertProblemDetails(response.body(), 422, { validation: true })
     }
 
-    await db.assertMissing('application_audit_entries', { application_id: application.id })
+    await db.assertMissing('application_status_transitions', { application_id: application.id })
   })
 
   test('rejects a non-eligible application with a conflict error (409)', async ({ client, db }) => {
