@@ -44,9 +44,6 @@ skills-lock.json
 .editorconfig
 .prettierignore
 
-# Backend tests (not used in production image build)
-apps/backend/tests
-
 # Logs, editors, and OS files
 *.log
 .DS_Store
