@@ -11,12 +11,18 @@ test.group('Applications store', (group) => {
     db,
   }) => {
     const applicant = await UserFactory.create()
+    const payload = {
+      title: 'Draft title',
+      category: 'Technology',
+      description: 'Draft description',
+      amount: 1234.56,
+    } as const
 
     const response = await client
       .visit('applicant.applications.store')
       .withGuard('web')
       .loginAs(applicant)
-      .json({})
+      .json(payload)
 
     response.assertStatus(201)
     response.assertBodyContains({
@@ -30,7 +36,12 @@ test.group('Applications store', (group) => {
   })
 
   test('rejects unauthenticated requests to create an application (401)', async ({ client }) => {
-    const response = await client.visit('applicant.applications.store').json({})
+    const response = await client.visit('applicant.applications.store').json({
+      title: 'Draft title',
+      category: 'Technology',
+      description: 'Draft description',
+      amount: 1234.56,
+    } as const)
 
     response.assertStatus(401)
     assertProblemDetails(response.body(), 401)
@@ -43,7 +54,12 @@ test.group('Applications store', (group) => {
       .visit('applicant.applications.store')
       .withGuard('web')
       .loginAs(applicant)
-      .json({ contactEmail: 'not-an-email', category: 'Unsupported' as any })
+      .json({
+        title: 'Draft title',
+        category: 'Unsupported' as any,
+        description: 'Draft description',
+        amount: 1234.56,
+      })
 
     response.assertStatus(422)
     assertProblemDetails(response.body(), 422, { validation: true })

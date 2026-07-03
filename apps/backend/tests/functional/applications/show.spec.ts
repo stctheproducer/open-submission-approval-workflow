@@ -36,9 +36,10 @@ test.group('Applications show', (group) => {
       data: {
         id: application.id,
         status: 'draft',
-        organizationName: application.organizationName,
-        contactName: application.contactName,
-        contactEmail: application.contactEmail,
+        title: application.title,
+        category: application.category,
+        description: application.description,
+        amount: application.amount,
       },
     })
 

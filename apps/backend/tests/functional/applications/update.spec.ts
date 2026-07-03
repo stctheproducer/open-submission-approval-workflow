@@ -13,7 +13,12 @@ test.group('Applications update', (group) => {
 
     const response = await client
       .visit('applicant.applications.update', { id: application.id })
-      .json({ organizationName: 'Test Org' })
+      .json({
+        title: 'Updated title',
+        category: 'Technology',
+        description: 'Updated description',
+        amount: 987.65,
+      })
 
     response.assertStatus(401)
     assertProblemDetails(response.body(), 401)
@@ -27,10 +32,11 @@ test.group('Applications update', (group) => {
     const application = await ApplicationFactory.merge({ userId: applicant.id }).create()
 
     const payload = {
-      organizationName: 'Updated Org',
-      contactName: 'Jane Doe',
-      contactEmail: 'jane@example.com',
-    }
+      title: 'Updated title',
+      category: 'Finance',
+      description: 'Updated description',
+      amount: 987.65,
+    } as const
 
     const response = await client
       .visit('applicant.applications.update', { id: application.id })
@@ -42,9 +48,10 @@ test.group('Applications update', (group) => {
     response.assertBodyContains({
       data: {
         id: application.id,
-        organizationName: 'Updated Org',
-        contactName: 'Jane Doe',
-        contactEmail: 'jane@example.com',
+        title: 'Updated title',
+        category: 'Finance',
+        description: 'Updated description',
+        amount: '987.65',
       },
     })
     await db.assertHas('applications', {
@@ -63,7 +70,12 @@ test.group('Applications update', (group) => {
       .visit('applicant.applications.update', { id: application.id })
       .withGuard('web')
       .loginAs(applicant)
-      .json({ contactEmail: 'not-an-email', category: 'Unsupported' as any })
+      .json({
+        title: 'Updated title',
+        category: 'Unsupported' as any,
+        description: 'Updated description',
+        amount: 987.65,
+      } as const)
 
     response.assertStatus(422)
     assertProblemDetails(response.body(), 422, { validation: true })
@@ -89,7 +101,12 @@ test.group('Applications update', (group) => {
         .visit('applicant.applications.update', { id })
         .withGuard('web')
         .loginAs(applicant)
-        .json({ organizationName: 'Test Org' })
+        .json({
+          title: 'Updated title',
+          category: 'Technology',
+          description: 'Updated description',
+          amount: 987.65,
+        } as const)
 
       response.assertStatus(404)
       assertProblemDetails(response.body(), 404)
@@ -109,7 +126,12 @@ test.group('Applications update', (group) => {
       .visit('applicant.applications.update', { id: application.id })
       .withGuard('web')
       .loginAs(applicant)
-      .json({ organizationName: 'Updated Org' })
+      .json({
+        title: 'Updated title',
+        category: 'Technology',
+        description: 'Updated description',
+        amount: 987.65,
+      } as const)
 
     response.assertStatus(409)
     assertProblemDetails(response.body(), 409)

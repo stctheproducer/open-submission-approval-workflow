@@ -13,14 +13,11 @@ export default class ApplicationTransformer extends BaseTransformer<Application>
       : null
     return {
       id: this.resource.id,
-      title: this.resource.title ?? this.resource.organizationName,
+      title: this.resource.title,
       category: this.resource.category,
       description: this.resource.description,
       amount: this.resource.amount,
       status: this.resource.status,
-      organizationName: this.resource.organizationName,
-      contactName: this.resource.contactName,
-      contactEmail: this.resource.contactEmail,
       applicant: this.resource.user ? UserTransformer.transform(this.resource.user) : null,
       assignedReviewer: this.resource.assignedReviewer
         ? UserTransformer.transform(this.resource.assignedReviewer)

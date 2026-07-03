@@ -5,16 +5,18 @@ import { APPLICATION_CATEGORY_VALUES } from '#values/application_category_option
  * Validator to use when creating a draft application
  */
 export const createApplicationValidator = vine.create({
-  contactEmail: vine.string().email().nullable().optional(),
-  category: vine.enum(APPLICATION_CATEGORY_VALUES).nullable().optional(),
+  title: vine.string().trim().minLength(1).maxLength(255),
+  category: vine.enum(APPLICATION_CATEGORY_VALUES),
+  description: vine.string().trim().minLength(1),
+  amount: vine.number().decimal(2).positive(),
 })
 
 /**
  * Validator to use when updating a draft application
  */
 export const updateApplicationValidator = vine.create({
-  organizationName: vine.string().nullable().optional(),
-  contactName: vine.string().nullable().optional(),
-  contactEmail: vine.string().email().nullable().optional(),
-  category: vine.enum(APPLICATION_CATEGORY_VALUES).nullable().optional(),
+  title: vine.string().trim().minLength(1).maxLength(255).optional(),
+  category: vine.enum(APPLICATION_CATEGORY_VALUES).optional(),
+  description: vine.string().trim().minLength(1).optional(),
+  amount: vine.number().decimal(2).positive().optional(),
 })

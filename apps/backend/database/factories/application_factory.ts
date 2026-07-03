@@ -13,9 +13,6 @@ export const ApplicationFactory = factory
       category: faker.commerce.department(),
       description: faker.lorem.paragraph(),
       amount: faker.number.float({ min: 1000, max: 5000, fractionDigits: 2 }).toString(),
-      organizationName: faker.company.name(),
-      contactName: faker.person.fullName(),
-      contactEmail: faker.internet.email().toLowerCase(),
     }
   })
   .build()

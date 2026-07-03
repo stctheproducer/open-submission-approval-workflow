@@ -1,12 +1,24 @@
 ---
 capability: application-drafts
+change: application-schema-reset
+synced: 2026-07-03
 ---
 
-# Application Drafts — State
+# Delta — application-drafts
 
-## Requirements
+## ADDED
+
+### Applicants can attach and replace one supporting file on a draft application
+
+- Given a draft application, when the applicant adds a supporting file, then that file becomes part of the draft application.
+- Given a draft application that already has a supporting file, when the applicant adds a new one, then the new file replaces the previous file.
+- Given a submitted or otherwise locked application, when the applicant tries to change the supporting file, then the application stays unchanged.
+
+## MODIFIED
 
 ### Applicant-owned draft creation and editing
+
+_Was: Applicants could create and edit their own drafts, but the draft shape did not yet include the full application spec._
 
 - Given an authenticated applicant with no current draft, when they create a new application, then the system creates a draft owned by that applicant and ready for the full application shape.
 - Given an authenticated applicant with draft applications, when they view their application workspace, then they see only their own applications in a paginated list with sensible default ordering.
@@ -16,17 +28,19 @@ capability: application-drafts
 
 ### Applicants can review draft application details
 
+_Was: Applicants could open their own drafts and review the record details already stored on the application._
+
 - Given an authenticated applicant who owns a draft application, when they open that application from their workspace, then they can review the current application status and record details including the title, category, description, amount, and any supporting file.
 - Given an applicant attempting to open a draft application they do not own, when they try to access that record, then the application stays private and its details are not revealed.
 
 ### Applicants can reopen requested-changes applications back to draft
 
+_Was: Applicants could reopen requested-changes applications back to draft so editing could resume._
+
 - Given an authenticated applicant who owns an application in requested changes, when they explicitly reopen that record, then the same application returns to draft so editing can resume with the same draft details.
 - Given an application that is not in requested changes, when someone tries to reopen it to draft through this journey, then the action is rejected and the application stays in its current state.
 - Given an applicant attempting to reopen another applicant's requested-changes application, when they try to perform the reopen action, then the application stays private and unchanged.
 
-### Applicants can attach and replace one supporting file on a draft application
+## REMOVED
 
-- Given a draft application, when the applicant adds a supporting file, then that file becomes part of the draft application.
-- Given a draft application that already has a supporting file, when the applicant adds a new one, then the new file replaces the previous file.
-- Given a submitted or otherwise locked application, when the applicant tries to change the supporting file, then the application stays unchanged.
+_None._
