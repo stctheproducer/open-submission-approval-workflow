@@ -53,6 +53,8 @@ The hosted app uses the architecture described below with seeded applicant and r
 - **Frontend**: React + Vite + TypeScript + shadcn/ui
 - **Frontend data layer**: `@tuyau/react-query` with a base URL controlled by `VITE_API_URL`
 - **Routing**: the frontend points Tuyau at the Dokploy backend origin with `VITE_API_URL`
+- **Session cookies**: backend `DOMAIN` is set so cookies scope to the app domain
+- **Cross-origin support**: backend CORS allowlist is configured for the frontend origin in production
 - **Database**: PostgreSQL
 - **Local infrastructure**: Docker Compose for PostgreSQL and Mailpit
 - **Hosting**: Sevalla frontend at `apptest.chandamulenga.com`, Dokploy database and backend at `apptest-api.chandamulenga.com`
@@ -74,6 +76,8 @@ Deployment shape:
 - backend API at `apptest-api.chandamulenga.com`
 - the frontend sends API requests to `apptest-api.chandamulenga.com` via `VITE_API_URL`
 - session auth uses cookie-based requests between the browser and backend
+- backend CORS allows the frontend origin in production
+- backend session cookies use the configured `DOMAIN`
 
 ## Local Setup
 
@@ -236,7 +240,7 @@ Current behavior:
 - not-found errors return structured not-found responses
 - illegal workflow transitions return `409 Conflict`
 
-Frontend requests use the browser session cookie. The deployment does not require setting a `CORS_ORIGIN` environment variable on the backend.
+Frontend requests use the browser session cookie. The deployment requires a backend `CORS_ORIGIN` allowlist and a session `DOMAIN` value so the browser accepts authenticated requests from the frontend origin.
 
 ## Testing Strategy
 
@@ -262,7 +266,8 @@ The browser talks to the backend through cookie-based session requests. In produ
 
 - the frontend's API client is configured with `VITE_API_URL`
 - session cookies are attached to requests to the backend API domain
-- the backend does not need a `CORS_ORIGIN` environment variable for this deployment
+- the backend needs `CORS_ORIGIN` configured for the frontend origin
+- the backend session cookie needs `DOMAIN` configured for the app domain
 
 ### What the assessor can verify locally
 

@@ -30,6 +30,7 @@ const sessionConfig = defineConfig({
    * cookie store.
    */
   cookie: {
+    domain: env.get('DOMAIN') ? `.${env.get('DOMAIN')}` : undefined,
     /**
      * Restrict the cookie to a URL path. '/' means all routes.
      */
