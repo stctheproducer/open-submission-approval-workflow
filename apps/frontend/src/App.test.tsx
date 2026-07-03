@@ -1013,6 +1013,16 @@ describe("App routing", () => {
     expect((await screen.findAllByText("Submitted")).length).toBeGreaterThan(0)
   })
 
+  it("returns to the applicant list from application detail", async () => {
+    renderWithRole("/applicant/applications/42", "applicant")
+
+    expect(await screen.findByText("Draft")).toBeInTheDocument()
+
+    fireEvent.click(screen.getByRole("link", { name: "Back to applications" }))
+
+    expect(await screen.findByRole("heading", { name: "Your applications" })).toBeInTheDocument()
+  })
+
   it("keeps requested-changes applications read-only until the applicant reopens the draft", async () => {
     renderWithRole("/applicant/applications/7", "applicant")
 

@@ -117,13 +117,17 @@ export function useApplicationPageMeta(
   application: { title: string } | null | undefined,
   contextLabel: string
 ) {
-  const meta = application?.title
-    ? ({
-        title: application.title,
-        description: `${contextLabel} for ${application.title} in the submission and approval workflow.`,
-        robots: "noindex, nofollow",
-      } satisfies PageMeta)
-    : null
+  const meta = useMemo(() => {
+    if (!application?.title) {
+      return null
+    }
+
+    return {
+      title: application.title,
+      description: `${contextLabel} for ${application.title} in the submission and approval workflow.`,
+      robots: "noindex, nofollow",
+    } satisfies PageMeta
+  }, [application?.title, contextLabel])
 
   useSetPageMeta(meta)
 }

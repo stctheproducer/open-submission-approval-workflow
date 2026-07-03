@@ -40,10 +40,7 @@ import { Skeleton } from "@/components/ui/skeleton"
 import { Textarea } from "@/components/ui/textarea"
 import { AuthenticatedShell } from "@/components/authenticated-shell"
 import { apiQuery } from "@/lib/query"
-import {
-  formatAmount,
-  type WorkflowApplication,
-} from "@/lib/review-workflow"
+import { formatAmount, type WorkflowApplication } from "@/lib/review-workflow"
 import { useApplicationPageMeta } from "@/routing/page-meta"
 
 const APPLICATION_CATEGORY_OPTIONS = [
@@ -250,6 +247,7 @@ function ApplicantNewApplicationPage({
         <Link
           to="/applicant"
           className="inline-flex items-center gap-1 text-sm font-medium text-primary underline-offset-4 hover:underline"
+          replace
         >
           <ChevronLeft className="h-4 w-4" aria-hidden="true" />
           Back to applications
@@ -778,7 +776,7 @@ function ApplicantApplicationWorkspace({
 }) {
   useApplicationPageMeta(
     application,
-    mode === "edit" ? "Edit draft application" : "Application detail",
+    mode === "edit" ? "Edit draft application" : "Application detail"
   )
 
   const location = useLocation()
