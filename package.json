@@ -9,7 +9,7 @@
     "node": ">=24.0.0"
   },
   "scripts": {
-    "setup": "bash scripts/setup-backend-env.sh",
+    "setup": "node scripts/setup-backend-env.mjs",
     "db:up": "docker compose -f apps/backend/compose.yml up -d pgsql mailpit",
     "db:down": "docker compose -f apps/backend/compose.yml down",
     "db:logs": "docker compose -f apps/backend/compose.yml logs -f pgsql mailpit",
