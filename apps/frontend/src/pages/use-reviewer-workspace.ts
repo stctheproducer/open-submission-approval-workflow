@@ -3,7 +3,12 @@ import { useNavigate, useSearchParams } from "react-router"
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
 
 import { apiQuery } from "@/lib/query"
-import { canApprove, canStartReview, type ReviewState, type WorkflowApplication } from "@/lib/review-workflow"
+import {
+  canApprove,
+  canStartReview,
+  type ReviewState,
+  type WorkflowApplication,
+} from "@/lib/review-workflow"
 
 type ProblemDetails = {
   detail?: string
@@ -29,6 +34,8 @@ type UseReviewerWorkspaceOptions = {
   includeApplication?: boolean
   navigateToDetailOnStartReview?: boolean
 }
+
+const REVIEW_QUEUE_PAGE_SIZE_OPTIONS = [5, 10, 20, 50, 100] as const
 
 function parseProblemDetails(error: unknown) {
   if (
@@ -61,15 +68,31 @@ export function useReviewerWorkspace({
   const pageParam = Number(searchParams.get("page") ?? "1")
   const activePage =
     Number.isFinite(pageParam) && pageParam > 0 ? Math.floor(pageParam) : 1
+  const perPageParam = Number(searchParams.get("perPage") ?? "20")
+  const activePerPage = REVIEW_QUEUE_PAGE_SIZE_OPTIONS.includes(
+    Number.isFinite(perPageParam) && perPageParam > 0
+      ? (Math.floor(
+          perPageParam
+        ) as (typeof REVIEW_QUEUE_PAGE_SIZE_OPTIONS)[number])
+      : 20
+  )
+    ? Number.isFinite(perPageParam) && perPageParam > 0
+      ? Math.floor(perPageParam)
+      : 20
+    : 20
   const [actionError, setActionError] = useState<string | null>(null)
 
   const queueQuery = useQuery({
     ...(activeReviewState
       ? apiQuery.reviewer.applications.index.queryOptions({
-          query: { reviewState: activeReviewState, page: activePage },
+          query: {
+            reviewState: activeReviewState,
+            page: activePage,
+            perPage: activePerPage,
+          },
         })
       : apiQuery.reviewer.applications.index.queryOptions({
-          query: { page: activePage },
+          query: { page: activePage, perPage: activePerPage },
         })),
     enabled: includeQueue,
   })
@@ -78,7 +101,10 @@ export function useReviewerWorkspace({
     ...apiQuery.reviewer.applications.show.queryOptions({
       params: { id: applicationId ?? 0 },
     }),
-    enabled: includeApplication && typeof applicationId === "number" && Number.isFinite(applicationId),
+    enabled:
+      includeApplication &&
+      typeof applicationId === "number" &&
+      Number.isFinite(applicationId),
   })
 
   const startReviewMutation = useMutation({
@@ -90,12 +116,16 @@ export function useReviewerWorkspace({
     onSuccess: (response, variables) => {
       setActionError(null)
       queryClient.setQueryData(
-        apiQuery.reviewer.applications.show.queryKey({ params: { id: variables.params.id } }),
-        response,
+        apiQuery.reviewer.applications.show.queryKey({
+          params: { id: variables.params.id },
+        }),
+        response
       )
       queryClient.invalidateQueries(apiQuery.reviewer.applications.pathFilter())
       if (navigateToDetailOnStartReview) {
-        navigate(`/reviewer/applications/${variables.params.id}`, { replace: true })
+        navigate(`/reviewer/applications/${variables.params.id}`, {
+          replace: true,
+        })
       }
     },
   })
@@ -106,13 +136,16 @@ export function useReviewerWorkspace({
       const details = await parseProblemDetails(error)
       setActionError(details.detail ?? "We couldn’t approve this application.")
     },
-    onSuccess: (response, variables) => {
+    onSuccess: async (response, variables) => {
       setActionError(null)
       queryClient.setQueryData(
-        apiQuery.reviewer.applications.show.queryKey({ params: { id: variables.params.applicationId } }),
-        response,
+        apiQuery.reviewer.applications.show.queryKey({
+          params: { id: variables.params.applicationId },
+        }),
+        response
       )
       queryClient.invalidateQueries(apiQuery.reviewer.applications.pathFilter())
+      navigate("/reviewer", { replace: true })
     },
   })
 
@@ -125,7 +158,9 @@ export function useReviewerWorkspace({
     onSuccess: async () => {
       setActionError(null)
       navigate("/reviewer", { replace: true })
-      await queryClient.invalidateQueries(apiQuery.reviewer.applications.pathFilter())
+      await queryClient.invalidateQueries(
+        apiQuery.reviewer.applications.pathFilter()
+      )
     },
   })
 
@@ -138,11 +173,14 @@ export function useReviewerWorkspace({
     onSuccess: async () => {
       setActionError(null)
       navigate("/reviewer", { replace: true })
-      await queryClient.invalidateQueries(apiQuery.reviewer.applications.pathFilter())
+      await queryClient.invalidateQueries(
+        apiQuery.reviewer.applications.pathFilter()
+      )
     },
   })
 
-  const application = applicationQuery.data?.data as WorkflowApplication | undefined
+  const application = applicationQuery.data?.data as
+    WorkflowApplication | undefined
   const reviewQueue = queueQuery.data as QueueResponse | undefined
   const currentApplicationId = application?.id ?? applicationId
 
@@ -155,7 +193,7 @@ export function useReviewerWorkspace({
     }
     nextParams.delete("page")
 
-    setSearchParams(nextParams, { replace: true })
+    setSearchParams(nextParams, { replace: true, preventScrollReset: true })
   }
 
   function setQueuePage(nextPage: number) {
@@ -166,7 +204,14 @@ export function useReviewerWorkspace({
       nextParams.set("page", String(nextPage))
     }
 
-    setSearchParams(nextParams, { replace: true })
+    setSearchParams(nextParams, { replace: true, preventScrollReset: true })
+  }
+
+  function setQueuePerPage(nextPerPage: number) {
+    const nextParams = new URLSearchParams(searchParams)
+    nextParams.set("perPage", String(nextPerPage))
+    nextParams.delete("page")
+    setSearchParams(nextParams, { replace: true, preventScrollReset: true })
   }
 
   function startReview(applicationIdToStart: number) {
@@ -234,7 +279,8 @@ export function useReviewerWorkspace({
       changeRequestMutation.variables?.params.id === currentApplicationId,
     isRejectionPending:
       rejectionMutation.isPending &&
-      rejectionMutation.variables?.params.application_id === currentApplicationId,
+      rejectionMutation.variables?.params.application_id ===
+        currentApplicationId,
     isStartReviewPending:
       startReviewMutation.isPending &&
       startReviewMutation.variables?.params.id === currentApplicationId,
@@ -242,10 +288,12 @@ export function useReviewerWorkspace({
       startReviewMutation.isPending &&
       startReviewMutation.variables?.params.id === applicationIdToCheck,
     queueQuery,
+    refetchQueue: queueQuery.refetch,
     rejectCurrentApplication,
     reviewQueue,
     requestChangesCurrentApplication,
     setQueuePage,
+    setQueuePerPage,
     setReviewFilter,
     startCurrentApplicationReview,
     startReview,

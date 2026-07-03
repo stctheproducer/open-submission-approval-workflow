@@ -4,6 +4,7 @@ import { Route, Routes } from "react-router"
 import { LoginPage } from "@/pages/login-page"
 import {
   ApplicantApplicationPage,
+  ApplicantApplicationDraftPage,
   ApplicantWorkspacePage,
 } from "@/pages/applicant-workspace-page"
 import {
@@ -54,6 +55,10 @@ export function App({ currentRole }: AppProps) {
         <Route
           path="/applicant"
           element={<ApplicantWorkspacePage onSignedOut={handleSignedOut} />}
+        />
+        <Route
+          path="/applicant/applications/new"
+          element={<ApplicantApplicationDraftPage onSignedOut={handleSignedOut} />}
         />
         <Route
           path="/applicant/applications/:id"

@@ -18,9 +18,6 @@ export type WorkflowTransition = {
 export type WorkflowApplication = {
   id: number
   title?: string | null
-  organizationName?: string | null
-  contactName?: string | null
-  contactEmail?: string | null
   category?: string | null
   description?: string | null
   amount?: number | string | null
@@ -33,6 +30,7 @@ export type WorkflowApplication = {
   statusTransitions?: WorkflowTransition[]
   createdAt?: string
   updatedAt?: string
+  attachmentUrl?: string | null
 }
 
 export function humanizeStatus(status: string) {
@@ -64,7 +62,7 @@ export function formatAmount(amount?: number | string | null) {
 
   return new Intl.NumberFormat("en-US", {
     style: "currency",
-    currency: "USD",
+    currency: "ZMW",
     maximumFractionDigits: 0,
   }).format(numericAmount)
 }
@@ -113,8 +111,8 @@ export function getReviewStateTone(reviewState?: string | null) {
   }
 }
 
-export function queueItemLabel(application: Pick<WorkflowApplication, "id" | "title" | "organizationName">) {
-  return application.title ?? application.organizationName ?? `Application #${application.id}`
+export function queueItemLabel(application: Pick<WorkflowApplication, "id" | "title">) {
+  return application.title ?? `Application #${application.id}`
 }
 
 export function canStartReview(application?: Pick<WorkflowApplication, "status" | "reviewState">) {

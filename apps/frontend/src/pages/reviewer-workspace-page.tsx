@@ -1,16 +1,10 @@
 import { type ReactNode, useState } from "react"
-import { Link, useParams } from "react-router"
-import {
-  ArrowLeft,
-  CheckCircle2,
-  Inbox,
-  Play,
-  UserRound,
-} from "lucide-react"
+import { Link, useNavigate, useParams } from "react-router"
+import { ArrowLeft, CheckCircle2, Inbox, Play } from "lucide-react"
 
 import { ReviewStateFilter } from "@/components/review-state-filter"
 import { CardTotalBadge } from "@/components/card-total-badge"
-import { QueuePagination } from "@/components/queue-pagination"
+import { QueuePaginationControls } from "@/components/queue-pagination"
 import {
   ApplicationStatusBadge,
   ReviewStateBadge,
@@ -19,14 +13,24 @@ import { AuthenticatedShell } from "@/components/authenticated-shell"
 import { WorkflowTimeline } from "@/components/workflow-timeline"
 import { ErrorAlert } from "@/components/workspace-alert"
 import { Button } from "@/components/ui/button"
+import { Badge } from "@/components/ui/badge"
 import {
   Card,
   CardContent,
   CardDescription,
   CardHeader,
 } from "@/components/ui/card"
+import {
+  Field,
+  FieldContent,
+  FieldDescription,
+  FieldError,
+  FieldGroup,
+  FieldLabel,
+} from "@/components/ui/field"
 import { Separator } from "@/components/ui/separator"
 import { Skeleton } from "@/components/ui/skeleton"
+import { Textarea } from "@/components/ui/textarea"
 import {
   formatAmount,
   formatDate,
@@ -70,18 +74,14 @@ function ReviewerAppShell({
   )
 }
 
-function RecordCard({ label, value }: { label: string; value: string }) {
+function RecordCard({ label, value }: { label: string; value: ReactNode }) {
   return (
-    <Card className="rounded-2xl border border-border bg-muted/30 py-4 shadow-none">
-      <CardHeader className="gap-2">
-        <p className="text-xs font-semibold tracking-[0.24em] text-primary uppercase">
-          {label}
-        </p>
-        <CardDescription className="text-sm leading-6 text-foreground">
-          {value}
-        </CardDescription>
-      </CardHeader>
-    </Card>
+    <div className="grid gap-1 rounded-2xl border border-border bg-background/80 px-4 py-4">
+      <p className="text-xs font-semibold tracking-[0.24em] text-primary uppercase">
+        {label}
+      </p>
+      <p className="text-sm leading-6 text-foreground">{value}</p>
+    </div>
   )
 }
 
@@ -97,23 +97,10 @@ function LoadingPanel({ body }: { body: string }) {
   )
 }
 
-function QueueOverviewCard({
-  total,
-  currentPage,
-  lastPage,
-  onPageChange,
-}: {
-  total: number
-  currentPage: number
-  lastPage: number
-  onPageChange: (page: number) => void
-}) {
+function QueueOverviewCard({ total }: { total: number }) {
   return (
     <Card className="relative rounded-[2rem] border border-border shadow-sm">
-      <CardTotalBadge
-        total={total}
-        label={`${total} applications in queue`}
-      />
+      <CardTotalBadge total={total} label={`${total} applications in queue`} />
       <CardContent className="flex flex-wrap items-end justify-between gap-6 pr-16">
         <div className="flex max-w-2xl flex-col gap-3">
           <p className="text-sm font-semibold tracking-[0.24em] text-primary uppercase">
@@ -127,11 +114,6 @@ function QueueOverviewCard({
             to check its history and act with confidence.
           </CardDescription>
         </div>
-        <QueuePagination
-          currentPage={currentPage}
-          lastPage={lastPage}
-          onPageChange={onPageChange}
-        />
       </CardContent>
     </Card>
   )
@@ -179,22 +161,26 @@ function QueueItemCard({
     <Card className="rounded-[1.75rem] border border-border py-6 shadow-sm transition hover:border-primary/35">
       <CardContent className="flex flex-col gap-5">
         <div className="flex flex-wrap items-start justify-between gap-4">
-          <div className="flex flex-col gap-2">
+          <div className="flex min-w-0 flex-1 flex-col gap-3">
+            <div className="flex flex-wrap items-center gap-2">
+              <Badge variant="secondary">
+                {application.category ?? "Uncategorized"}
+              </Badge>
+              <Badge variant="outline">
+                {formatAmount(application.amount)}
+              </Badge>
+            </div>
             <Link
               to={`/reviewer/applications/${application.id}`}
               className="text-2xl font-semibold tracking-tight text-foreground underline-offset-4 hover:underline"
             >
               {queueItemLabel(application)}
             </Link>
-            <div className="flex flex-wrap items-center gap-3 text-sm text-muted-foreground">
-              <span>
-                {application.applicant?.fullName ??
-                  application.contactName ??
-                  "No applicant name yet"}
-              </span>
-              <span>•</span>
-              <span>{application.contactEmail ?? "No contact email"}</span>
-            </div>
+            <p className="max-w-2xl text-sm leading-6 text-muted-foreground">
+              {application.applicant?.fullName
+                ? `${application.applicant.fullName}${application.applicant.email ? ` · ${application.applicant.email}` : ""}`
+                : "No applicant name"}
+            </p>
           </div>
 
           <div className="flex flex-wrap gap-2">
@@ -205,28 +191,21 @@ function QueueItemCard({
 
         <Separator className="bg-border/70" />
 
-        <div className="grid gap-4 md:grid-cols-3">
-          <MetaTile
-            label="Contact"
-            primary={application.contactName ?? "No contact name"}
-            secondary={application.contactEmail ?? "No contact email"}
-          />
-          <MetaTile
-            label="Category"
-            primary={application.category ?? "Uncategorized"}
-            secondary={formatAmount(application.amount)}
-          />
-          <MetaTile
-            label="Workflow"
-            primary={
-              isReady
+        <div className="flex flex-wrap items-center gap-2 text-sm text-muted-foreground">
+          <span className="inline-flex items-center gap-1 rounded-full border border-border bg-background px-3 py-1">
+            <span className="font-medium text-foreground">Workflow</span>
+            <span>
+              {isReady
                 ? "Start review to claim this application."
                 : isOwned
                   ? "This application is assigned to you."
-                  : "No reviewer state available."
-            }
-            secondary={`Updated ${formatDate(application.updatedAt)}`}
-          />
+                  : "No reviewer state available."}
+            </span>
+          </span>
+          <span className="inline-flex items-center gap-1 rounded-full border border-border bg-background px-3 py-1">
+            <span className="font-medium text-foreground">Updated</span>
+            <span>{formatDate(application.updatedAt)}</span>
+          </span>
         </div>
 
         <div className="flex flex-wrap gap-3">
@@ -258,36 +237,41 @@ function QueueItemCard({
   )
 }
 
-function EmptyQueueState() {
+function EmptyQueueState({ onReload }: { onReload: () => void }) {
   return (
-    <div className="flex flex-col gap-6 px-1 py-2 sm:px-2">
-      <div className="flex flex-wrap items-start justify-between gap-4">
-        <div className="flex max-w-2xl flex-col gap-3">
-          <p className="text-sm font-semibold tracking-[0.24em] text-primary uppercase">
-            No items in queue
-          </p>
-          <h3 className="text-2xl font-semibold tracking-tight text-foreground">
-            Nothing is ready for review yet.
-          </h3>
+    <Card className="rounded-[1.75rem] border border-border/70 bg-background/60 shadow-none">
+      <CardContent className="flex flex-col gap-6 px-6 py-6">
+        <div className="flex flex-wrap items-start justify-between gap-4">
+          <div className="flex max-w-2xl flex-col gap-3">
+            <p className="text-sm font-semibold tracking-[0.24em] text-primary uppercase">
+              No items in queue
+            </p>
+            <h3 className="text-2xl font-semibold tracking-tight text-foreground">
+              Nothing is ready for review yet.
+            </h3>
+          </div>
+          <Button size="sm" variant="outline" onClick={onReload}>
+            Reload queue
+          </Button>
         </div>
-      </div>
 
-      <div className="grid gap-4 rounded-[1.75rem] border border-border/70 bg-background/60 p-6 shadow-none sm:grid-cols-[auto,1fr] sm:items-center">
-        <div className="flex h-16 w-16 items-center justify-center rounded-full bg-primary/10 text-primary">
-          <Inbox className="h-8 w-8" aria-hidden="true" />
+        <div className="grid gap-4 rounded-[1.5rem] bg-background/80 p-4 shadow-none sm:grid-cols-[auto,1fr] sm:items-center">
+          <div className="flex size-16 items-center justify-center rounded-full bg-primary/10 text-primary">
+            <Inbox className="size-8" aria-hidden="true" />
+          </div>
+          <div className="flex flex-col gap-2">
+            <p className="text-xs font-semibold tracking-[0.24em] text-primary uppercase">
+              Waiting for submissions
+            </p>
+            <p className="text-sm leading-6 text-muted-foreground">
+              New applications will appear here once applicants submit them. Use
+              the queue controls above to filter between ready and owned work
+              when the list fills up.
+            </p>
+          </div>
         </div>
-        <div className="space-y-2">
-          <p className="text-xs font-semibold tracking-[0.24em] text-primary uppercase">
-            Waiting for submissions
-          </p>
-          <p className="text-sm leading-6 text-muted-foreground">
-            New applications will appear here once applicants submit them. Use
-            the queue controls above to filter between ready and owned work
-            when the list fills up.
-          </p>
-        </div>
-      </div>
-    </div>
+      </CardContent>
+    </Card>
   )
 }
 
@@ -301,22 +285,20 @@ function SidebarNoteCard({
   children: ReactNode
 }) {
   return (
-    <Card
+    <section
       className={
         gradient
-          ? "rounded-[2rem] border border-border/70 bg-muted/30 shadow-none"
-          : "rounded-[2rem] border border-border/70 bg-background/70 shadow-none"
+          ? "rounded-[2rem] border border-border/70 bg-muted/30 px-5 py-5 shadow-none"
+          : "rounded-[2rem] border border-border/70 bg-background/70 px-5 py-5 shadow-none"
       }
     >
-      <CardHeader className="pb-3">
-        <p className="text-xs font-semibold tracking-[0.24em] text-primary uppercase">
-          {title}
-        </p>
-      </CardHeader>
-      <CardContent className="flex flex-col gap-2 text-sm leading-6 text-muted-foreground">
+      <p className="text-xs font-semibold tracking-[0.24em] text-primary uppercase">
+        {title}
+      </p>
+      <div className="mt-3 flex flex-col gap-2 text-sm leading-6 text-muted-foreground">
         {children}
-      </CardContent>
-    </Card>
+      </div>
+    </section>
   )
 }
 
@@ -349,45 +331,37 @@ function DecisionCommentCard({
   const commentRequired = trimmedDecisionComment.length === 0
 
   return (
-    <Card className="rounded-[1.75rem] border border-border bg-muted/30">
-      <CardHeader>
-        <div className="flex flex-wrap items-start justify-between gap-3">
-          <div className="flex flex-col gap-2">
-            <p className="text-sm font-semibold tracking-[0.24em] text-primary uppercase">
-              Workflow action
-            </p>
-            <h3 className="text-xl font-semibold tracking-tight text-foreground">
-              Decision availability
-            </h3>
-          </div>
-          <div className="rounded-full border border-border bg-background px-3 py-1 text-xs font-semibold tracking-[0.22em] text-muted-foreground uppercase">
-            {canRequestChanges ? "Approval available" : "Approval locked"}
-          </div>
+    <section className="rounded-[1.75rem] border border-border bg-muted/20 px-6 py-6">
+      <div className="flex flex-wrap items-start justify-between gap-3">
+        <div className="flex flex-col gap-2">
+          <p className="text-sm font-semibold tracking-[0.24em] text-primary uppercase">
+            Decision comment
+          </p>
+          <h3 className="text-xl font-semibold tracking-tight text-foreground">
+            Required for request changes and rejection
+          </h3>
         </div>
-        <CardDescription className="text-sm leading-6">
-          {canRequestChanges
-            ? "You can approve this application because it is under review and assigned to you."
-            : "Approval appears only after you start review and the application is assigned to you."}
-        </CardDescription>
-      </CardHeader>
-      <CardContent>
-        <Card className="rounded-2xl border border-border bg-background/80 py-5 shadow-none">
-          <CardHeader>
-            <div className="flex flex-col gap-2">
-              <label
-                htmlFor="reviewer-decision-comment"
-                className="text-sm font-semibold text-foreground"
-              >
-                Decision comment
-              </label>
-              <CardDescription className="text-sm leading-6">
-                Change requests and rejections require a comment so the
-                applicant sees the reason in the workflow history.
-              </CardDescription>
-            </div>
-          </CardHeader>
-          <CardContent className="flex flex-col gap-4">
-            <textarea
+        <div className="rounded-full border border-border bg-background px-3 py-1 text-xs font-semibold tracking-[0.22em] text-muted-foreground uppercase">
+          {canRequestChanges ? "Approval available" : "Approval locked"}
+        </div>
+      </div>
+      <p className="mt-3 max-w-2xl text-sm leading-6 text-muted-foreground">
+        Add the reason once. We’ll attach it to the workflow history when you
+        request changes or reject the application.
+      </p>
+
+      <Separator className="my-6 bg-border/70" />
+
+      <FieldGroup>
+        <Field data-invalid={Boolean(decisionCommentError) || undefined}>
+          <FieldContent>
+            <FieldLabel htmlFor="reviewer-decision-comment">
+              Decision comment
+            </FieldLabel>
+            <FieldDescription id="reviewer-decision-comment-description">
+              Required before taking a decision.
+            </FieldDescription>
+            <Textarea
               id="reviewer-decision-comment"
               value={decisionComment}
               onChange={(event) => {
@@ -398,42 +372,40 @@ function DecisionCommentCard({
               }}
               disabled={!canRequestChanges || isDecisionPending}
               rows={4}
-              placeholder="Explain what needs to change or why the application is being rejected."
-              className="w-full rounded-2xl border border-border bg-card px-4 py-3 text-sm leading-6 text-foreground transition outline-none focus:border-primary/50 focus:ring-2 focus:ring-primary/20 disabled:cursor-not-allowed disabled:opacity-60"
+              placeholder="What should change or why should this be rejected?"
+              aria-invalid={Boolean(decisionCommentError)}
+              aria-describedby={
+                decisionCommentError
+                  ? "reviewer-decision-comment-description reviewer-decision-comment-error"
+                  : "reviewer-decision-comment-description"
+              }
             />
+            <FieldError id="reviewer-decision-comment-error">
+              {decisionCommentError}
+            </FieldError>
+          </FieldContent>
+        </Field>
+      </FieldGroup>
 
-            {decisionCommentError ? (
-              <ErrorAlert title="Comment required">
-                {decisionCommentError}
-              </ErrorAlert>
-            ) : null}
-
-            <div className="flex flex-wrap gap-3">
-              <Button
-                size="sm"
-                variant="outline"
-                onClick={onRequestChanges}
-                disabled={
-                  !canRequestChanges || commentRequired || isDecisionPending
-                }
-              >
-                {isChangeRequestPending
-                  ? "Requesting changes…"
-                  : "Request changes"}
-              </Button>
-              <Button
-                size="sm"
-                variant="outline"
-                onClick={onReject}
-                disabled={!canReject || commentRequired || isDecisionPending}
-              >
-                {isRejectionPending ? "Rejecting…" : "Reject application"}
-              </Button>
-            </div>
-          </CardContent>
-        </Card>
-      </CardContent>
-    </Card>
+      <div className="mt-4 flex flex-wrap gap-3">
+        <Button
+          size="sm"
+          variant="outline"
+          onClick={onRequestChanges}
+          disabled={!canRequestChanges || commentRequired || isDecisionPending}
+        >
+          {isChangeRequestPending ? "Requesting changes…" : "Request changes"}
+        </Button>
+        <Button
+          size="sm"
+          variant="outline"
+          onClick={onReject}
+          disabled={!canReject || commentRequired || isDecisionPending}
+        >
+          {isRejectionPending ? "Rejecting…" : "Reject application"}
+        </Button>
+      </div>
+    </section>
   )
 }
 
@@ -447,7 +419,9 @@ export function ReviewerWorkspacePage({
     actionError,
     queueQuery,
     reviewQueue,
+    refetchQueue,
     setQueuePage,
+    setQueuePerPage,
     setReviewFilter,
     startReview,
     isStartingReview,
@@ -492,20 +466,24 @@ export function ReviewerWorkspacePage({
     >
       <section className="grid gap-6 xl:grid-cols-[minmax(0,1.2fr)_minmax(18rem,0.8fr)]">
         <div className="flex flex-col gap-6">
-          <QueueOverviewCard
-            total={reviewQueue.metadata.total}
-            currentPage={reviewQueue.metadata.currentPage}
-            lastPage={reviewQueue.metadata.lastPage}
-            onPageChange={setQueuePage}
-          />
+          <QueueOverviewCard total={reviewQueue.metadata.total} />
 
           <div className="flex flex-col gap-4">
             {actionError ? <ErrorAlert>{actionError}</ErrorAlert> : null}
 
-            <ReviewStateFilter
-              value={activeReviewState}
-              onValueChange={setReviewFilter}
-            />
+            <div className="flex flex-wrap items-center justify-between gap-4">
+              <ReviewStateFilter
+                value={activeReviewState}
+                onValueChange={setReviewFilter}
+              />
+              <QueuePaginationControls
+                currentPage={reviewQueue.metadata.currentPage}
+                lastPage={reviewQueue.metadata.lastPage}
+                perPage={reviewQueue.metadata.perPage}
+                onPageChange={setQueuePage}
+                onPerPageChange={setQueuePerPage}
+              />
+            </div>
           </div>
 
           {reviewQueue.data.length > 0 ? (
@@ -521,15 +499,14 @@ export function ReviewerWorkspacePage({
             </div>
           ) : (
             <EmptyQueueState
-              onReviewQueueReset={() => {
-                setReviewFilter(null)
-                setQueuePage(1)
+              onReload={() => {
+                void refetchQueue()
               }}
             />
           )}
         </div>
 
-        <aside className="flex flex-col gap-4 xl:pt-16">
+        <aside className="flex flex-col gap-4">
           <SidebarNoteCard title="Queue rules" gradient>
             <p>Ready items are submitted work without an owner.</p>
             <p>Owned items are the applications currently assigned to you.</p>
@@ -552,6 +529,7 @@ export function ReviewerApplicationPage({
   onSignedOut?: () => void
 }) {
   const params = useParams()
+  const navigate = useNavigate()
   const applicationId = Number(params.id)
   const {
     actionError,
@@ -600,15 +578,39 @@ export function ReviewerApplicationPage({
         title="Application detail unavailable."
         description="The reviewer workspace could not load that application right now."
       >
-        <LoadingPanel body="We couldn’t load that reviewer detail page." />
+        <Card className="rounded-[2rem] border border-border bg-background/70 shadow-sm">
+          <CardContent className="flex flex-col gap-4">
+            <p className="text-sm font-semibold tracking-[0.24em] text-primary uppercase">
+              Couldn’t load this application
+            </p>
+            <p className="text-sm leading-6 text-muted-foreground">
+              We couldn’t load that reviewer detail page.
+            </p>
+            <div className="flex flex-wrap gap-3">
+              <Button
+                size="sm"
+                onClick={() => {
+                  void applicationQuery.refetch()
+                }}
+              >
+                Retry
+              </Button>
+              <Button
+                size="sm"
+                variant="outline"
+                nativeButton={false}
+                render={<Link to="/reviewer" />}
+              >
+                Back to review list
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
       </ReviewerAppShell>
     )
   }
 
-  const title =
-    application.title ??
-    application.organizationName ??
-    `Application #${application.id}`
+  const title = application.title ?? `Application #${application.id}`
   const trimmedDecisionComment = decisionComment.trim()
   const isDecisionPending = isChangeRequestPending || isRejectionPending
 
@@ -707,7 +709,18 @@ export function ReviewerApplicationPage({
 
               <Separator className="bg-border/70" />
 
-              {actionError ? <ErrorAlert>{actionError}</ErrorAlert> : null}
+              {actionError ? (
+                <ErrorAlert
+                  action={{
+                    label: "Back to review list",
+                    onClick: () => {
+                      navigate("/reviewer", { replace: true })
+                    },
+                  }}
+                >
+                  {actionError}
+                </ErrorAlert>
+              ) : null}
 
               <div className="grid gap-4 md:grid-cols-2">
                 <RecordCard
@@ -719,10 +732,6 @@ export function ReviewerApplicationPage({
                   value={application.assignedReviewer?.fullName ?? "Unassigned"}
                 />
                 <RecordCard
-                  label="Contact email"
-                  value={application.contactEmail ?? "No contact email"}
-                />
-                <RecordCard
                   label="Category"
                   value={application.category ?? "Uncategorized"}
                 />
@@ -731,23 +740,40 @@ export function ReviewerApplicationPage({
                   value={formatAmount(application.amount)}
                 />
                 <RecordCard
+                  label="Attachment"
+                  value={
+                    application.attachmentUrl ? (
+                      <Badge
+                        variant="outline"
+                        render={
+                          <a
+                            href={application.attachmentUrl}
+                            target="_blank"
+                            rel="noreferrer"
+                          >
+                            Open file
+                          </a>
+                        }
+                      />
+                    ) : (
+                      "No attachment uploaded"
+                    )
+                  }
+                />
+                <RecordCard
                   label="Updated"
                   value={formatDate(application.updatedAt)}
                 />
               </div>
 
-              <Card className="rounded-[1.75rem] border border-border bg-muted/30">
-                <CardHeader>
-                  <h3 className="text-lg font-semibold tracking-tight text-foreground">
-                    Description
-                  </h3>
-                </CardHeader>
-                <CardContent>
-                  <p className="text-sm leading-6 text-muted-foreground">
-                    {application.description ?? "No description provided."}
-                  </p>
-                </CardContent>
-              </Card>
+              <section className="rounded-[1.75rem] border border-border bg-background/80 px-5 py-5">
+                <h3 className="text-lg font-semibold tracking-tight text-foreground">
+                  Description
+                </h3>
+                <p className="mt-3 text-sm leading-6 text-muted-foreground">
+                  {application.description ?? "No description provided."}
+                </p>
+              </section>
 
               <DecisionCommentCard
                 decisionComment={decisionComment}
@@ -771,31 +797,26 @@ export function ReviewerApplicationPage({
             </CardContent>
           </Card>
 
-          <WorkflowTimeline
-            eyebrow="Embedded audit"
-            title="Application timeline"
-            emptyMessage="No workflow transitions yet."
-            history={application.history}
-          />
-        </section>
-
-        <SidebarNoteCard title="Workflow state" gradient>
-          <div className="flex flex-wrap items-center gap-3">
-            <UserRound className="size-4 text-primary" aria-hidden="true" />
-            <p className="text-sm font-semibold tracking-[0.24em] text-primary uppercase">
-              Workflow state
-            </p>
+          <div className="flex flex-col gap-4">
+            <SidebarNoteCard title="Workflow state" gradient>
+              <p className="text-sm leading-6 text-muted-foreground">
+                {application.status === "approved"
+                  ? "This application is approved and the reviewer decision trail is locked."
+                  : canApprove
+                    ? "The application is assigned to you and ready for approval, change request, or rejection with a required comment."
+                    : canStartReview
+                      ? "The application is ready. Start review to claim it before approving."
+                      : "This application is not currently eligible for a reviewer action."}
+              </p>
+            </SidebarNoteCard>
+            <WorkflowTimeline
+              eyebrow="Audit Logs"
+              title="Application timeline"
+              emptyMessage="No workflow transitions yet."
+              history={application.history}
+            />
           </div>
-          <p className="text-sm leading-6 text-muted-foreground">
-            {application.status === "approved"
-              ? "This application is approved and the reviewer decision trail is locked."
-              : canApprove
-                ? "The application is assigned to you and ready for approval, change request, or rejection with a required comment."
-                : canStartReview
-                  ? "The application is ready. Start review to claim it before approving."
-                  : "This application is not currently eligible for a reviewer action."}
-          </p>
-        </SidebarNoteCard>
+        </section>
       </div>
     </ReviewerAppShell>
   )

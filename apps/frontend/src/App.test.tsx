@@ -7,6 +7,21 @@ import { api } from "@/lib/api"
 import { AppProviders } from "@/providers"
 import { ThemeProvider } from "@/components/theme-provider"
 
+const sonnerMock = vi.hoisted(() => ({
+  toast: {
+    error: vi.fn(),
+    success: vi.fn(),
+    info: vi.fn(),
+    warning: vi.fn(),
+    loading: vi.fn(),
+  },
+}))
+
+vi.mock("sonner", () => ({
+  toast: sonnerMock.toast,
+  Toaster: () => null,
+}))
+
 const listResponse = {
   data: [
     {
@@ -450,11 +465,11 @@ beforeEach(() => {
       return listResponse
     }
 
-    if (routeName === "applicant.applications.show" && options?.params?.id === 42) {
+    if (routeName === "applicant.applications.show" && Number(options?.params?.id) === 42) {
       return applicantDetailResponse
     }
 
-    if (routeName === "applicant.applications.show" && options?.params?.id === 99) {
+    if (routeName === "applicant.applications.show" && Number(options?.params?.id) === 99) {
       return {
         data: {
           ...detailResponse.data,
@@ -464,7 +479,7 @@ beforeEach(() => {
       }
     }
 
-    if (routeName === "applicant.applications.show" && options?.params?.id === 7) {
+    if (routeName === "applicant.applications.show" && Number(options?.params?.id) === 7) {
       if (reopenedApplicationIds.has(7)) {
         return applicantRequestedChangesResponse
       }
@@ -473,6 +488,25 @@ beforeEach(() => {
     }
 
     if (routeName === "applicant.applications.store") {
+      if (options?.body?.title === "Trigger backend validation") {
+        throw {
+          response: {
+            json: async () => ({
+              errors: [
+                {
+                  field: "title",
+                  message: "The title has already been taken.",
+                },
+                {
+                  field: "amount",
+                  message: "The amount must be greater than zero.",
+                },
+              ],
+            }),
+          },
+        }
+      }
+
       return {
         data: {
           ...detailResponse.data,
@@ -752,6 +786,7 @@ afterEach(() => {
   cleanup()
   window.localStorage.clear()
   vi.restoreAllMocks()
+  vi.clearAllMocks()
 })
 
 describe("App routing", () => {
@@ -837,63 +872,112 @@ describe("App routing", () => {
     expect(screen.queryByText("Session status")).not.toBeInTheDocument()
   })
 
-  it("creates a draft, edits it with the shared form, and shows backend validation feedback", async () => {
+  it("creates a draft from the new page, edits it with the shared form, and shows backend validation feedback", async () => {
     renderWithRole("/applicant", "applicant")
 
-    fireEvent.click(await screen.findByRole("button", { name: "Start a new draft" }))
+    fireEvent.click(await screen.findByRole("link", { name: "Start a new draft" }))
 
     await waitFor(() => {
-      expect(screen.getByRole("heading", { name: "Edit draft application" })).toBeInTheDocument()
+      expect(
+        screen.getByRole("heading", {
+          name: "Start a draft with the details already filled in.",
+        }),
+      ).toBeInTheDocument()
     })
 
-    fireEvent.change(screen.getByLabelText("Contact email"), {
-      target: { value: "not-an-email" },
-    })
-    fireEvent.click(screen.getByRole("button", { name: "Save draft" }))
-
-    expect(
-      await screen.findByText("The contact email field must be a valid email address."),
-    ).toBeInTheDocument()
-
-    fireEvent.change(screen.getByLabelText("Organization name"), {
+    fireEvent.change(screen.getByLabelText("Title"), {
       target: { value: "Northwind Mutual" },
     })
-    fireEvent.change(screen.getByLabelText("Contact name"), {
-      target: { value: "Jane Doe" },
+    fireEvent.click(screen.getByRole("radio", { name: /Finance/ }))
+    fireEvent.change(screen.getByLabelText("Description"), {
+      target: { value: "Expand the customer support desk." },
     })
-    fireEvent.change(screen.getByLabelText("Contact email"), {
-      target: { value: "jane@northwind.test" },
+    fireEvent.change(screen.getByLabelText("Amount"), {
+      target: { value: "125000" },
+    })
+    fireEvent.click(screen.getByRole("button", { name: "Create draft" }))
+
+    await waitFor(() => {
+      expect(
+        screen.getByRole("heading", { name: "Edit draft application" }),
+      ).toBeInTheDocument()
+    })
+    expect(
+      screen.getByRole("button", { name: "View detail" }),
+    ).toBeInTheDocument()
+    expect(
+      screen.getByRole("button", { name: "Start a new draft" }),
+    ).toBeInTheDocument()
+
+    fireEvent.change(screen.getByLabelText("Title"), {
+      target: { value: "Northwind Mutual" },
+    })
+    fireEvent.click(screen.getByRole("radio", { name: /Finance/ }))
+    fireEvent.change(screen.getByLabelText("Description"), {
+      target: { value: "Expand the customer support desk." },
+    })
+    fireEvent.change(screen.getByLabelText("Amount"), {
+      target: { value: "125000" },
     })
     fireEvent.click(screen.getByRole("button", { name: "Save draft" }))
 
     expect(await screen.findByText("Draft saved.")).toBeInTheDocument()
   })
 
+  it("shows a toast for each backend validation message when creating a draft", async () => {
+    renderWithRole("/applicant/applications/new", "applicant")
+
+    fireEvent.change(screen.getByLabelText("Title"), {
+      target: { value: "Trigger backend validation" },
+    })
+    fireEvent.click(screen.getByRole("radio", { name: /Finance/ }))
+    fireEvent.change(screen.getByLabelText("Description"), {
+      target: { value: "Expand the customer support desk." },
+    })
+    fireEvent.change(screen.getByLabelText("Amount"), {
+      target: { value: "125000" },
+    })
+    fireEvent.click(screen.getByRole("button", { name: "Create draft" }))
+
+    await waitFor(() => {
+      expect(sonnerMock.toast.error).toHaveBeenCalledTimes(2)
+    })
+    expect(sonnerMock.toast.error).toHaveBeenNthCalledWith(
+      1,
+      "The title has already been taken.",
+    )
+    expect(sonnerMock.toast.error).toHaveBeenNthCalledWith(
+      2,
+      "The amount must be greater than zero.",
+    )
+  })
+
   it("shows a detail view with workflow status and timeline, then submits the application", async () => {
     renderWithRole("/applicant/applications/42", "applicant")
 
-    expect(await screen.findByText("Status: Draft")).toBeInTheDocument()
+    expect(await screen.findByText("Draft")).toBeInTheDocument()
     expect(screen.getByRole("heading", { name: "Application timeline" })).toBeInTheDocument()
     expect(screen.getByText("Draft -> Submitted")).toBeInTheDocument()
 
     fireEvent.click(screen.getByRole("button", { name: "Submit application" }))
 
-    expect(await screen.findByText("Status: Submitted")).toBeInTheDocument()
+    expect((await screen.findAllByText("Submitted")).length).toBeGreaterThan(0)
   })
 
   it("keeps requested-changes applications read-only until the applicant reopens the draft", async () => {
     renderWithRole("/applicant/applications/7", "applicant")
 
-    expect(await screen.findByText("Status: Changes requested")).toBeInTheDocument()
+    expect((await screen.findAllByText("Changes requested")).length).toBeGreaterThan(0)
     expect(screen.getByText("Please clarify the budget assumptions.")).toBeInTheDocument()
-    expect(screen.queryByLabelText("Organization name")).not.toBeInTheDocument()
+    expect(screen.getByText("Draft details")).toBeInTheDocument()
+    expect(screen.queryByLabelText("Title")).not.toBeInTheDocument()
 
     fireEvent.click(screen.getByRole("button", { name: "Reopen draft" }))
 
     await waitFor(() => {
       expect(screen.getByRole("heading", { name: "Edit draft application" })).toBeInTheDocument()
     })
-    expect(screen.getByLabelText("Organization name")).toBeInTheDocument()
+    expect(screen.getByLabelText("Title")).toBeInTheDocument()
   })
 })
 
@@ -956,7 +1040,7 @@ describe("Reviewer workspace", () => {
 
     fireEvent.click(screen.getByRole("button", { name: "Approve application" }))
 
-    expect(await screen.findByText("Approved")).toBeInTheDocument()
+    expect(await screen.findAllByText("Approved")).toHaveLength(2)
   })
 
   it("requires a comment before requesting changes and returns the reviewer to the queue after success", async () => {

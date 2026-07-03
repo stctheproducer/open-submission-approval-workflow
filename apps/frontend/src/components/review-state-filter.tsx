@@ -37,6 +37,7 @@ export function ReviewStateFilter({
             value={option.value}
             variant="outline"
             size="sm"
+            className="data-[state=on]:border-primary data-[state=on]:bg-primary data-[state=on]:text-primary-foreground aria-pressed:border-primary aria-pressed:bg-primary aria-pressed:text-primary-foreground aria-pressed:shadow-sm"
           >
             {option.label}
           </ToggleGroupItem>

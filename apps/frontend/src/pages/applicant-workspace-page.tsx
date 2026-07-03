@@ -1,11 +1,18 @@
 import { type ReactNode, useState } from "react"
-import { Link, useLocation, useNavigate, useParams, useSearchParams } from "react-router"
+import {
+  Link,
+  useLocation,
+  useNavigate,
+  useParams,
+  useSearchParams,
+} from "react-router"
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
-import { Inbox } from "lucide-react"
+import { toast } from "sonner"
+import { ChevronLeft, Inbox } from "lucide-react"
 
 import { ApplicationStatusBadge } from "@/components/workflow-badge"
 import { CardTotalBadge } from "@/components/card-total-badge"
-import { QueuePagination } from "@/components/queue-pagination"
+import { QueuePaginationControls } from "@/components/queue-pagination"
 import { WorkflowTimeline } from "@/components/workflow-timeline"
 import { SuccessAlert } from "@/components/workspace-alert"
 import { Badge } from "@/components/ui/badge"
@@ -26,16 +33,15 @@ import {
   CardTitle,
 } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
 import { Separator } from "@/components/ui/separator"
 import { Textarea } from "@/components/ui/textarea"
-import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group"
 import { AuthenticatedShell } from "@/components/authenticated-shell"
 import { apiQuery } from "@/lib/query"
 import {
   formatAmount,
   humanizeStatus,
   type WorkflowApplication,
-  type WorkflowTransition,
 } from "@/lib/review-workflow"
 
 const APPLICATION_CATEGORY_OPTIONS = [
@@ -45,6 +51,8 @@ const APPLICATION_CATEGORY_OPTIONS = [
   "Sales",
   "People",
 ] as const
+
+const APPLICATION_PAGE_SIZE_OPTIONS = [5, 10, 20, 50, 100] as const
 
 type FormState = {
   title: string
@@ -58,7 +66,24 @@ type ValidationError = {
   message: string
 }
 
-function parseErrorMessages(error: unknown) {
+type ProblemDetails = {
+  detail?: string
+  errors?: ValidationError[]
+}
+
+function errorMessagesFromDetails(details: ProblemDetails) {
+  const messages = (details.errors ?? [])
+    .map((entry) => entry.message.trim())
+    .filter((message) => message.length > 0)
+
+  if (messages.length > 0) {
+    return messages
+  }
+
+  return details.detail ? [details.detail] : []
+}
+
+function parseProblemDetails(error: unknown) {
   if (
     typeof error === "object" &&
     error &&
@@ -68,14 +93,18 @@ function parseErrorMessages(error: unknown) {
     "json" in error.response &&
     typeof error.response.json === "function"
   ) {
-    return error.response.json() as Promise<{ errors?: ValidationError[] }>
+    return error.response.json() as Promise<ProblemDetails>
   }
 
-  return Promise.resolve({ errors: [] })
+  return Promise.resolve({ detail: undefined, errors: [] })
 }
 
-function isValidEmail(value: string) {
-  return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value)
+function fieldErrorsFromDetails(details: ProblemDetails) {
+  return Object.fromEntries(
+    (details.errors ?? [])
+      .filter((entry) => Boolean(entry.field))
+      .map((entry) => [entry.field as string, entry.message])
+  )
 }
 
 function toFormState(application?: WorkflowApplication): FormState {
@@ -123,32 +152,341 @@ function ApplicantEmptyState() {
   )
 }
 
-export function ApplicantWorkspacePage({
+function ApplicantNewApplicationPage({
   onSignedOut,
 }: {
   onSignedOut?: () => void
 }) {
   const navigate = useNavigate()
+  const [form, setForm] = useState<FormState>({
+    title: "",
+    category: "",
+    description: "",
+    amount: "",
+  })
+  const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({})
+
+  const createDraft = useMutation({
+    ...apiQuery.applicant.applications.store.mutationOptions(),
+    onError: async (error) => {
+      const details = await parseProblemDetails(error)
+      const nextErrors = fieldErrorsFromDetails(details)
+      setFieldErrors(nextErrors)
+
+      const messages = errorMessagesFromDetails(details)
+      if (messages.length > 0) {
+        messages.forEach((message) => {
+          toast.error(message)
+        })
+      } else {
+        toast.error("We couldn’t create the draft right now.")
+      }
+    },
+    onSuccess: (response) => {
+      toast.success("Draft created.")
+      navigate(`/applicant/applications/${response.data.id}/edit`, {
+        replace: true,
+      })
+    },
+  })
+
+  function handleCreateDraft() {
+    const numericAmount = Number(form.amount)
+    const nextFieldErrors: Record<string, string> = {}
+
+    if (!form.title.trim()) {
+      nextFieldErrors.title = "Title is required."
+    }
+
+    if (!form.category.trim()) {
+      nextFieldErrors.category = "Choose a category."
+    }
+
+    if (!form.description.trim()) {
+      nextFieldErrors.description = "Description is required."
+    }
+
+    if (Number.isNaN(numericAmount) || numericAmount <= 0) {
+      nextFieldErrors.amount = "Enter a valid positive amount."
+    }
+
+    if (Object.keys(nextFieldErrors).length > 0) {
+      setFieldErrors(nextFieldErrors)
+      return
+    }
+
+    createDraft.mutate({
+      body: {
+        title: form.title.trim(),
+        category: form.category,
+        description: form.description.trim(),
+        amount: numericAmount,
+      },
+    })
+  }
+
+  return (
+    <ApplicantShell onSignedOut={onSignedOut}>
+      <div className="mb-6">
+        <Link
+          to="/applicant"
+          className="inline-flex items-center gap-1 text-sm font-medium text-primary underline-offset-4 hover:underline"
+        >
+          <ChevronLeft className="h-4 w-4" aria-hidden="true" />
+          Back to applications
+        </Link>
+      </div>
+
+      <div className="grid gap-6 xl:grid-cols-[1.1fr_0.9fr]">
+        <Card className="rounded-[2rem] border border-border">
+          <CardContent className="flex flex-col gap-6">
+            <div className="flex flex-wrap items-start justify-between gap-4">
+              <div className="space-y-3">
+                <p className="text-sm font-semibold tracking-[0.24em] text-primary uppercase">
+                  New application
+                </p>
+                <h1 className="text-4xl font-semibold tracking-tight text-foreground">
+                  Start a draft with the details already filled in.
+                </h1>
+                <CardDescription className="max-w-2xl text-sm leading-6">
+                  Create the draft once, then continue editing it from the
+                  application page if you need to refine the details or add an
+                  attachment.
+                </CardDescription>
+              </div>
+            </div>
+
+            <Separator className="bg-border/70" />
+
+            <FieldGroup className="gap-5">
+              <Field data-invalid={Boolean(fieldErrors.title) || undefined}>
+                <FieldContent>
+                  <FieldLabel htmlFor="new-application-title">Title</FieldLabel>
+                  <FieldDescription id="new-application-title-description">
+                    Give the application a clear working title.
+                  </FieldDescription>
+                  <Input
+                    id="new-application-title"
+                    value={form.title}
+                    onChange={(event) => {
+                      setForm((current) => ({
+                        ...current,
+                        title: event.target.value,
+                      }))
+                      if (fieldErrors.title) {
+                        setFieldErrors((current) => {
+                          const { title: _title, ...rest } = current
+                          return rest
+                        })
+                      }
+                    }}
+                    aria-invalid={Boolean(fieldErrors.title)}
+                    aria-describedby={
+                      fieldErrors.title
+                        ? "new-application-title-description new-application-title-error"
+                        : "new-application-title-description"
+                    }
+                  />
+                  <FieldError id="new-application-title-error">
+                    {fieldErrors.title}
+                  </FieldError>
+                </FieldContent>
+              </Field>
+
+              <Field data-invalid={Boolean(fieldErrors.category) || undefined}>
+                <FieldContent>
+                  <FieldLabel htmlFor="new-application-category">
+                    Category
+                  </FieldLabel>
+                  <FieldDescription id="new-application-category-description">
+                    Pick the one category that best fits the application.
+                  </FieldDescription>
+                  <RadioGroup
+                    aria-label="Application category"
+                    className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3"
+                    value={form.category}
+                    onValueChange={(nextValue) => {
+                      const nextCategory = nextValue ?? ""
+                      setForm((current) => ({
+                        ...current,
+                        category: nextCategory,
+                      }))
+                      if (fieldErrors.category) {
+                        setFieldErrors((current) => {
+                          const { category: _category, ...rest } = current
+                          return rest
+                        })
+                      }
+                    }}
+                  >
+                    {APPLICATION_CATEGORY_OPTIONS.map((option) => (
+                      <label
+                        key={option}
+                        className="flex cursor-pointer items-center gap-3 rounded-2xl border border-border bg-card px-4 py-3 text-sm font-medium text-foreground transition hover:border-primary/40 hover:bg-muted/40 has-data-[state=checked]:border-primary/40 has-data-[state=checked]:bg-primary/6"
+                      >
+                        <RadioGroupItem value={option} aria-label={option} />
+                        <span>{option}</span>
+                      </label>
+                    ))}
+                  </RadioGroup>
+                  <FieldError id="new-application-category-error">
+                    {fieldErrors.category}
+                  </FieldError>
+                </FieldContent>
+              </Field>
+
+              <Field
+                data-invalid={Boolean(fieldErrors.description) || undefined}
+              >
+                <FieldContent>
+                  <FieldLabel htmlFor="new-application-description">
+                    Description
+                  </FieldLabel>
+                  <FieldDescription id="new-application-description-description">
+                    Describe what the reviewer needs to understand.
+                  </FieldDescription>
+                  <Textarea
+                    id="new-application-description"
+                    value={form.description}
+                    onChange={(event) => {
+                      setForm((current) => ({
+                        ...current,
+                        description: event.target.value,
+                      }))
+                      if (fieldErrors.description) {
+                        setFieldErrors((current) => {
+                          const { description: _description, ...rest } = current
+                          return rest
+                        })
+                      }
+                    }}
+                    aria-invalid={Boolean(fieldErrors.description)}
+                    aria-describedby={
+                      fieldErrors.description
+                        ? "new-application-description-description new-application-description-error"
+                        : "new-application-description-description"
+                    }
+                  />
+                  <FieldError id="new-application-description-error">
+                    {fieldErrors.description}
+                  </FieldError>
+                </FieldContent>
+              </Field>
+
+              <Field data-invalid={Boolean(fieldErrors.amount) || undefined}>
+                <FieldContent>
+                  <FieldLabel htmlFor="new-application-amount">
+                    Amount
+                  </FieldLabel>
+                  <FieldDescription id="new-application-amount-description">
+                    Enter the requested amount as a positive number.
+                  </FieldDescription>
+                  <Input
+                    id="new-application-amount"
+                    type="number"
+                    min="0"
+                    step="0.01"
+                    inputMode="decimal"
+                    value={form.amount}
+                    onChange={(event) => {
+                      setForm((current) => ({
+                        ...current,
+                        amount: event.target.value,
+                      }))
+                      if (fieldErrors.amount) {
+                        setFieldErrors((current) => {
+                          const { amount: _amount, ...rest } = current
+                          return rest
+                        })
+                      }
+                    }}
+                    aria-invalid={Boolean(fieldErrors.amount)}
+                    aria-describedby={
+                      fieldErrors.amount
+                        ? "new-application-amount-description new-application-amount-error"
+                        : "new-application-amount-description"
+                    }
+                  />
+                  <FieldError id="new-application-amount-error">
+                    {fieldErrors.amount}
+                  </FieldError>
+                </FieldContent>
+              </Field>
+            </FieldGroup>
+
+            <div className="flex flex-wrap gap-3">
+              <Button
+                type="button"
+                disabled={createDraft.isPending}
+                onClick={handleCreateDraft}
+              >
+                {createDraft.isPending ? "Creating…" : "Create draft"}
+              </Button>
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => navigate("/applicant")}
+              >
+                Cancel
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
+
+        <aside className="order-first lg:order-none">
+          <Card className="rounded-[2rem] border border-border bg-[linear-gradient(180deg,_var(--card)_0%,_var(--muted)_100%)]">
+            <CardHeader>
+              <p className="text-sm font-semibold tracking-[0.24em] text-primary uppercase">
+                Draft preview
+              </p>
+            </CardHeader>
+            <CardContent className="flex flex-col gap-3 text-sm leading-6 text-muted-foreground">
+              <p>
+                These details appear in the applicant list, the draft detail
+                page, and the reviewer queue once the application is submitted.
+              </p>
+              <p>
+                Attach files later if needed. The draft stays editable until
+                submission.
+              </p>
+            </CardContent>
+          </Card>
+        </aside>
+      </div>
+    </ApplicantShell>
+  )
+}
+
+export function ApplicantWorkspacePage({
+  onSignedOut,
+}: {
+  onSignedOut?: () => void
+}) {
   const [searchParams, setSearchParams] = useSearchParams()
   const pageParam = Number(searchParams.get("page") ?? "1")
   const activePage =
     Number.isFinite(pageParam) && pageParam > 0 ? Math.floor(pageParam) : 1
+  const perPageParam = Number(searchParams.get("perPage") ?? "20")
+  const activePerPage = APPLICATION_PAGE_SIZE_OPTIONS.includes(
+    Number.isFinite(perPageParam) && perPageParam > 0
+      ? (Math.floor(
+          perPageParam
+        ) as (typeof APPLICATION_PAGE_SIZE_OPTIONS)[number])
+      : 20
+  )
+    ? Number.isFinite(perPageParam) && perPageParam > 0
+      ? Math.floor(perPageParam)
+      : 20
+    : 20
   const { data, isLoading, error } = useQuery(
     apiQuery.applicant.applications.index.queryOptions({
-      query: { page: activePage },
+      query: { page: activePage, perPage: activePerPage },
     })
   )
   const applications = data?.data ?? []
   const totalApplications = Number(data?.metadata.total ?? 0)
   const currentPage = Number(data?.metadata.currentPage ?? 1)
   const lastPage = Number(data?.metadata.lastPage ?? 1)
-
-  const createDraft = useMutation({
-    ...apiQuery.applicant.applications.store.mutationOptions(),
-    onSuccess: (response) => {
-      navigate(`/applicant/applications/${response.data.id}/edit`)
-    },
-  })
 
   function setApplicationsPage(nextPage: number) {
     const nextParams = new URLSearchParams(searchParams)
@@ -158,7 +496,14 @@ export function ApplicantWorkspacePage({
       nextParams.set("page", String(nextPage))
     }
 
-    setSearchParams(nextParams, { replace: true })
+    setSearchParams(nextParams, { replace: true, preventScrollReset: true })
+  }
+
+  function setApplicationsPerPage(nextPerPage: number) {
+    const nextParams = new URLSearchParams(searchParams)
+    nextParams.set("perPage", String(nextPerPage))
+    nextParams.delete("page")
+    setSearchParams(nextParams, { replace: true, preventScrollReset: true })
   }
 
   if (isLoading) {
@@ -182,7 +527,7 @@ export function ApplicantWorkspacePage({
               total={totalApplications}
               label={`${totalApplications} application${totalApplications === 1 ? "" : "s"}`}
             />
-            <CardContent className="flex flex-wrap items-end justify-between gap-6 pr-16">
+            <CardContent className="flex flex-wrap items-start justify-between gap-6 pr-16">
               <div className="flex max-w-2xl flex-col gap-3">
                 <p className="text-sm font-semibold tracking-[0.24em] text-primary uppercase">
                   Applicant area
@@ -196,26 +541,22 @@ export function ApplicantWorkspacePage({
                   applicant surface.
                 </CardDescription>
               </div>
-              <div className="flex flex-col items-end gap-3">
-                <QueuePagination
-                  currentPage={currentPage}
-                  lastPage={lastPage}
-                  onPageChange={setApplicationsPage}
-                />
-                <Button
-                  size="sm"
-                  onClick={() => {
-                    createDraft.mutate({ body: {} })
-                  }}
-                  disabled={createDraft.isPending}
-                >
-                  {createDraft.isPending
-                    ? "Creating draft…"
-                    : "Start a new draft"}
-                </Button>
-              </div>
+              <Link
+                to="/applicant/applications/new"
+                className="inline-flex shrink-0 items-center justify-center rounded-none border border-transparent bg-primary px-4 py-2 text-xs font-semibold tracking-widest whitespace-nowrap text-primary-foreground uppercase transition-all hover:bg-primary/80 focus-visible:border-ring focus-visible:ring-2 focus-visible:ring-ring/30"
+              >
+                Start a new draft
+              </Link>
             </CardContent>
           </Card>
+
+          <QueuePaginationControls
+            currentPage={currentPage}
+            lastPage={lastPage}
+            perPage={activePerPage}
+            onPageChange={setApplicationsPage}
+            onPerPageChange={setApplicationsPerPage}
+          />
 
           <div className="grid gap-4">
             {applications.length > 0 ? (
@@ -243,7 +584,8 @@ export function ApplicantWorkspacePage({
                         </div>
                         <div className="space-y-2">
                           <h2 className="text-2xl font-semibold tracking-tight text-foreground">
-                            {application.title ?? `Application #${application.id}`}
+                            {application.title ??
+                              `Application #${application.id}`}
                           </h2>
                           <p className="text-sm text-muted-foreground">
                             {application.description ?? "No description yet"}
@@ -267,25 +609,18 @@ export function ApplicantWorkspacePage({
               <p className="text-sm font-semibold tracking-[0.24em] text-primary uppercase">
                 Workflow notes
               </p>
-              <CardTitle className="text-2xl normal-case tracking-tight">
+              <CardTitle className="text-2xl tracking-tight normal-case">
                 What stays with the application
               </CardTitle>
               <CardDescription className="max-w-2xl text-sm leading-6">
-                The reviewer sees the draft title, category, description,
-                amount, and optional attachment. Nothing on this screen relies
-                on the retired contact or organization fields.
+                The reviewer sees the title, category, description, amount, and
+                any attachment.
               </CardDescription>
             </CardHeader>
             <CardContent className="flex flex-col gap-3 text-sm leading-6 text-muted-foreground">
-              <p>Drafts stay editable until you submit the application.</p>
-              <p>
-                Requested changes open read-only first so the reviewer feedback
-                is clear before you reopen the record for editing.
-              </p>
-              <p>
-                Every transition is shown on the application detail page as an
-                embedded timeline.
-              </p>
+              <p>Drafts stay editable until you submit them.</p>
+              <p>If changes are requested, you reopen the same record.</p>
+              <p>Every status change appears on the application timeline.</p>
             </CardContent>
           </Card>
         </aside>
@@ -329,6 +664,14 @@ export function ApplicantApplicationPage({
   )
 }
 
+export function ApplicantApplicationDraftPage({
+  onSignedOut,
+}: {
+  onSignedOut?: () => void
+}) {
+  return <ApplicantNewApplicationPage onSignedOut={onSignedOut} />
+}
+
 function ApplicantApplicationWorkspace({
   application,
   applicationId,
@@ -349,13 +692,12 @@ function ApplicantApplicationWorkspace({
   const updateDraft = useMutation({
     ...apiQuery.applicant.applications.update.mutationOptions(),
     onError: async (error) => {
-      const response = await parseErrorMessages(error)
-      const nextErrors = Object.fromEntries(
-        (response.errors ?? [])
-          .filter((entry) => Boolean(entry.field))
-          .map((entry) => [entry.field as string, entry.message])
-      )
+      const details = await parseProblemDetails(error)
+      const nextErrors = fieldErrorsFromDetails(details)
       setFieldErrors(nextErrors)
+      if (!details.errors?.some((entry) => Boolean(entry.field))) {
+        toast.error(details.detail ?? "We couldn’t save the draft right now.")
+      }
       setSuccessMessage(null)
     },
   })
@@ -363,18 +705,24 @@ function ApplicantApplicationWorkspace({
   const uploadAttachment = useMutation({
     ...apiQuery.applicant.applications.attachment.store.mutationOptions(),
     onError: async (error) => {
-      const response = await parseErrorMessages(error)
-      const nextErrors = Object.fromEntries(
-        (response.errors ?? [])
-          .filter((entry) => Boolean(entry.field))
-          .map((entry) => [entry.field as string, entry.message])
-      )
+      const details = await parseProblemDetails(error)
+      const nextErrors = fieldErrorsFromDetails(details)
       setFieldErrors(nextErrors)
+      setSuccessMessage(null)
+      if (!details.errors?.some((entry) => Boolean(entry.field))) {
+        toast.error(
+          details.detail ?? "We couldn’t upload the attachment right now."
+        )
+      }
     },
   })
 
   const submitApplication = useMutation({
     ...apiQuery.applicant.applications.submissions.store.mutationOptions(),
+    onError: async (error) => {
+      const details = await parseProblemDetails(error)
+      toast.error(details.detail ?? "We couldn’t submit the application.")
+    },
     onSuccess: (response) => {
       queryClient.setQueryData(
         apiQuery.applicant.applications.show.queryKey({
@@ -392,8 +740,12 @@ function ApplicantApplicationWorkspace({
 
   const reopenDraft = useMutation({
     ...apiQuery.applicant.applicationDraftReopenings.store.mutationOptions(),
+    onError: async (error) => {
+      const details = await parseProblemDetails(error)
+      toast.error(details.detail ?? "We couldn’t reopen the draft right now.")
+    },
     onSuccess: (response) => {
-      queryClient.setQueryData<{ data?: ApplicationRecord }>(
+      queryClient.setQueryData<{ data?: WorkflowApplication }>(
         apiQuery.applicant.applications.show.queryKey({
           params: { id: applicationId },
         }),
@@ -418,6 +770,7 @@ function ApplicantApplicationWorkspace({
       navigate(`/applicant/applications/${applicationId}/edit`, {
         replace: true,
       })
+      toast.success("Draft reopened.")
     },
   })
 
@@ -472,7 +825,7 @@ function ApplicantApplicationWorkspace({
       )
       setForm(toFormState(savedDraft.data as WorkflowApplication))
       setFieldErrors({})
-      setSuccessMessage("Draft saved.")
+      setSuccessMessage(null)
 
       if (attachmentFile) {
         const updatedWithAttachment = await uploadAttachment.mutateAsync({
@@ -494,6 +847,8 @@ function ApplicantApplicationWorkspace({
         setForm(toFormState(updatedWithAttachment.data as WorkflowApplication))
         setAttachmentFile(null)
         setSuccessMessage("Draft saved and attachment uploaded.")
+      } else {
+        setSuccessMessage("Draft saved.")
       }
     } catch {
       // Validation and transport errors are surfaced through the mutation callbacks.
@@ -512,8 +867,9 @@ function ApplicantApplicationWorkspace({
       <div className="mb-6">
         <Link
           to="/applicant"
-          className="text-sm font-medium text-primary underline-offset-4 hover:underline"
+          className="inline-flex items-center gap-1 text-sm font-medium text-primary underline-offset-4 hover:underline"
         >
+          <ChevronLeft className="h-4 w-4" aria-hidden="true" />
           Back to applications
         </Link>
       </div>
@@ -532,9 +888,6 @@ function ApplicantApplicationWorkspace({
                     : (application.title ?? `Application #${application.id}`)}
                 </h1>
                 <div className="flex flex-wrap items-center gap-3">
-                  <p className="text-sm text-muted-foreground">
-                    Status: {humanizeStatus(application.status)}
-                  </p>
                   <ApplicationStatusBadge status={application.status} />
                 </div>
               </div>
@@ -597,9 +950,7 @@ function ApplicantApplicationWorkspace({
                 <FieldGroup className="gap-5">
                   <Field data-invalid={Boolean(fieldErrors.title) || undefined}>
                     <FieldContent>
-                      <FieldLabel htmlFor="application-title">
-                        Title
-                      </FieldLabel>
+                      <FieldLabel htmlFor="application-title">Title</FieldLabel>
                       <FieldDescription id="application-title-description">
                         Give the application a clear working title for the
                         review queue.
@@ -612,6 +963,12 @@ function ApplicantApplicationWorkspace({
                             ...current,
                             title: event.target.value,
                           }))
+                          if (fieldErrors.title) {
+                            setFieldErrors((current) => {
+                              const { title: _title, ...rest } = current
+                              return rest
+                            })
+                          }
                         }}
                         aria-invalid={Boolean(fieldErrors.title)}
                         aria-describedby={
@@ -626,21 +983,22 @@ function ApplicantApplicationWorkspace({
                     </FieldContent>
                   </Field>
 
-                  <Field data-invalid={Boolean(fieldErrors.category) || undefined}>
+                  <Field
+                    data-invalid={Boolean(fieldErrors.category) || undefined}
+                  >
                     <FieldContent>
                       <FieldLabel htmlFor="application-category">
                         Category
                       </FieldLabel>
                       <FieldDescription id="application-category-description">
-                        Choose one fixed category for the application.
+                        Pick the one category that best fits the application.
                       </FieldDescription>
-                      <ToggleGroup
+                      <RadioGroup
                         aria-label="Application category"
-                        className="flex flex-wrap justify-start"
-                        spacing={0}
-                        value={[form.category || ""]}
+                        className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3"
+                        value={form.category}
                         onValueChange={(nextValue) => {
-                          const nextCategory = nextValue[0] ?? ""
+                          const nextCategory = nextValue ?? ""
                           setForm((current) => ({
                             ...current,
                             category: nextCategory,
@@ -654,23 +1012,27 @@ function ApplicantApplicationWorkspace({
                         }}
                       >
                         {APPLICATION_CATEGORY_OPTIONS.map((option) => (
-                          <ToggleGroupItem
+                          <label
                             key={option}
-                            value={option}
-                            variant="outline"
-                            size="sm"
+                            className="flex cursor-pointer items-center gap-3 rounded-2xl border border-border bg-card px-4 py-3 text-sm font-medium text-foreground transition hover:border-primary/40 hover:bg-muted/40 has-data-[state=checked]:border-primary/40 has-data-[state=checked]:bg-primary/6"
                           >
-                            {option}
-                          </ToggleGroupItem>
+                            <RadioGroupItem
+                              value={option}
+                              aria-label={option}
+                            />
+                            <span>{option}</span>
+                          </label>
                         ))}
-                      </ToggleGroup>
+                      </RadioGroup>
                       <FieldError id="application-category-error">
                         {fieldErrors.category}
                       </FieldError>
                     </FieldContent>
                   </Field>
 
-                  <Field data-invalid={Boolean(fieldErrors.description) || undefined}>
+                  <Field
+                    data-invalid={Boolean(fieldErrors.description) || undefined}
+                  >
                     <FieldContent>
                       <FieldLabel htmlFor="application-description">
                         Description
@@ -687,6 +1049,13 @@ function ApplicantApplicationWorkspace({
                             ...current,
                             description: event.target.value,
                           }))
+                          if (fieldErrors.description) {
+                            setFieldErrors((current) => {
+                              const { description: _description, ...rest } =
+                                current
+                              return rest
+                            })
+                          }
                         }}
                         aria-invalid={Boolean(fieldErrors.description)}
                         aria-describedby={
@@ -701,7 +1070,9 @@ function ApplicantApplicationWorkspace({
                     </FieldContent>
                   </Field>
 
-                  <Field data-invalid={Boolean(fieldErrors.amount) || undefined}>
+                  <Field
+                    data-invalid={Boolean(fieldErrors.amount) || undefined}
+                  >
                     <FieldContent>
                       <FieldLabel htmlFor="application-amount">
                         Amount
@@ -721,6 +1092,12 @@ function ApplicantApplicationWorkspace({
                             ...current,
                             amount: event.target.value,
                           }))
+                          if (fieldErrors.amount) {
+                            setFieldErrors((current) => {
+                              const { amount: _amount, ...rest } = current
+                              return rest
+                            })
+                          }
                         }}
                         aria-invalid={Boolean(fieldErrors.amount)}
                         aria-describedby={
@@ -735,7 +1112,9 @@ function ApplicantApplicationWorkspace({
                     </FieldContent>
                   </Field>
 
-                  <Field data-invalid={Boolean(fieldErrors.attachment) || undefined}>
+                  <Field
+                    data-invalid={Boolean(fieldErrors.attachment) || undefined}
+                  >
                     <FieldContent>
                       <FieldLabel htmlFor="application-attachment">
                         Optional file attachment
@@ -753,7 +1132,8 @@ function ApplicantApplicationWorkspace({
                           setAttachmentFile(nextFile)
                           if (fieldErrors.attachment) {
                             setFieldErrors((current) => {
-                              const { attachment: _attachment, ...rest } = current
+                              const { attachment: _attachment, ...rest } =
+                                current
                               return rest
                             })
                           }
@@ -770,7 +1150,9 @@ function ApplicantApplicationWorkspace({
                           Selected: {attachmentFile.name}
                         </Badge>
                       ) : application.attachmentUrl ? (
-                        <Badge variant="outline">Attachment already uploaded</Badge>
+                        <Badge variant="outline">
+                          Attachment already uploaded
+                        </Badge>
                       ) : null}
                       <FieldError id="application-attachment-error">
                         {fieldErrors.attachment}
@@ -796,60 +1178,102 @@ function ApplicantApplicationWorkspace({
                   >
                     View detail
                   </Button>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={() => navigate("/applicant/applications/new")}
+                  >
+                    Start a new draft
+                  </Button>
                 </div>
               </form>
             ) : (
-              <Card className="rounded-[1.75rem] border border-border bg-muted/40 py-6 shadow-none">
-                <CardHeader>
-                  <CardTitle className="text-2xl normal-case tracking-tight">
+              <div className="flex flex-col gap-5">
+                <div className="flex flex-col gap-2">
+                  <h2 className="text-2xl font-semibold tracking-tight text-foreground">
                     Draft details
-                  </CardTitle>
-                  <CardDescription>
+                  </h2>
+                  <p className="max-w-2xl text-sm leading-6 text-muted-foreground">
                     These are the fields reviewers will see after you submit.
-                  </CardDescription>
-                </CardHeader>
-                <CardContent className="grid gap-4">
-                  <ReadOnlyRow label="Title" value={application.title} />
-                  <ReadOnlyRow label="Category" value={application.category} />
-                  <ReadOnlyRow
-                    label="Description"
-                    value={application.description}
-                  />
-                  <ReadOnlyRow
-                    label="Amount"
-                    value={formatAmount(application.amount)}
-                  />
-                  <div className="rounded-2xl border border-border bg-card px-4 py-3">
-                    <p className="text-xs font-semibold tracking-[0.2em] text-muted-foreground uppercase">
-                      Attachment
-                    </p>
-                    {application.attachmentUrl ? (
-                      <Badge
-                        variant="outline"
-                        render={
-                          <a
-                            href={application.attachmentUrl}
-                            target="_blank"
-                            rel="noreferrer"
-                          >
-                            View uploaded file
-                          </a>
-                        }
-                      />
-                    ) : (
-                      <p className="mt-2 text-sm text-foreground">
-                        No attachment uploaded yet.
-                      </p>
-                    )}
+                  </p>
+                </div>
+
+                <Separator className="bg-border/70" />
+
+                <dl className="grid gap-4">
+                  {[
+                    {
+                      label: "Title",
+                      value: application.title,
+                      span: "md:col-span-2",
+                    },
+                    {
+                      label: "Category",
+                      value: application.category,
+                    },
+                    {
+                      label: "Amount",
+                      value: formatAmount(application.amount),
+                    },
+                  ].map((field) => (
+                    <div
+                      key={field.label}
+                      className={`grid gap-1 rounded-2xl border border-border bg-background/80 px-4 py-4 ${field.span ?? ""}`}
+                    >
+                      <dt className="text-xs font-semibold tracking-[0.24em] text-muted-foreground uppercase">
+                        {field.label}
+                      </dt>
+                      <dd className="text-sm leading-6 font-medium text-foreground">
+                        {field.value ?? "Not provided yet"}
+                      </dd>
+                    </div>
+                  ))}
+
+                  <div className="grid gap-1 rounded-2xl border border-border bg-background/80 px-4 py-4 md:col-span-2">
+                    <dt className="text-xs font-semibold tracking-[0.24em] text-muted-foreground uppercase">
+                      Description
+                    </dt>
+                    <dd className="text-sm leading-6 text-foreground">
+                      {application.description ?? "Not provided yet"}
+                    </dd>
                   </div>
-                </CardContent>
-              </Card>
+
+                  <div className="rounded-2xl border border-border bg-background/80 px-4 py-4 md:col-span-2">
+                    <div className="flex flex-wrap items-center justify-between gap-3">
+                      <div className="space-y-1">
+                        <p className="text-xs font-semibold tracking-[0.24em] text-muted-foreground uppercase">
+                          Attachment
+                        </p>
+                        <p className="text-sm leading-6 text-foreground">
+                          {application.attachmentUrl
+                            ? "A file is attached and will be visible to reviewers."
+                            : "No attachment uploaded yet."}
+                        </p>
+                      </div>
+                      {application.attachmentUrl ? (
+                        <Badge
+                          variant="outline"
+                          render={
+                            <a
+                              href={application.attachmentUrl}
+                              target="_blank"
+                              rel="noreferrer"
+                            >
+                              Open file
+                            </a>
+                          }
+                        />
+                      ) : null}
+                    </div>
+                  </div>
+                </dl>
+              </div>
             )}
           </CardContent>
         </Card>
 
         <WorkflowTimeline
-          eyebrow="Embedded audit"
+          eyebrow="Audit Logs"
           title="Application timeline"
           emptyMessage="No workflow transitions yet."
           history={application.history}
