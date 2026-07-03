@@ -1,4 +1,4 @@
-import { useState } from "react"
+import { type ReactNode, useState } from "react"
 import { Link, useLocation, useNavigate, useParams } from "react-router"
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
 
@@ -22,6 +22,7 @@ import {
 } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Separator } from "@/components/ui/separator"
+import { AuthenticatedShell } from "@/components/authenticated-shell"
 import { apiQuery } from "@/lib/query"
 import { humanizeStatus, type WorkflowTransition } from "@/lib/review-workflow"
 
@@ -79,7 +80,11 @@ function toFormState(application?: ApplicationRecord): FormState {
   }
 }
 
-export function ApplicantWorkspacePage() {
+export function ApplicantWorkspacePage({
+  onSignedOut,
+}: {
+  onSignedOut?: () => void
+}) {
   const navigate = useNavigate()
   const { data, isLoading, error } = useQuery(
     apiQuery.applicant.applications.index.queryOptions()
@@ -107,7 +112,7 @@ export function ApplicantWorkspacePage() {
   }
 
   return (
-    <ApplicantShell>
+    <ApplicantShell onSignedOut={onSignedOut}>
       <section className="grid gap-8 lg:grid-cols-[1.2fr_0.8fr]">
         <div className="flex flex-col gap-5">
           <Card className="rounded-[2rem] border border-border shadow-sm">
@@ -199,7 +204,13 @@ export function ApplicantWorkspacePage() {
   )
 }
 
-export function ApplicantApplicationPage({ mode }: { mode: "view" | "edit" }) {
+export function ApplicantApplicationPage({
+  mode,
+  onSignedOut,
+}: {
+  mode: "view" | "edit"
+  onSignedOut?: () => void
+}) {
   const params = useParams()
   const applicationId = Number(params.id)
   const { data, isLoading, error } = useQuery(
@@ -217,7 +228,7 @@ export function ApplicantApplicationPage({ mode }: { mode: "view" | "edit" }) {
   }
 
   return (
-    <ApplicantShell>
+    <ApplicantShell onSignedOut={onSignedOut}>
       <ApplicantApplicationWorkspace
         key={`${data.data.id}:${data.data.updatedAt ?? ""}`}
         application={data.data as ApplicationRecord}
@@ -595,11 +606,20 @@ function ApplicantApplicationWorkspace({
   )
 }
 
-function ApplicantShell({ children }: { children: React.ReactNode }) {
+function ApplicantShell({
+  onSignedOut,
+  children,
+}: {
+  onSignedOut?: () => void
+  children: ReactNode
+}) {
   return (
-    <main className="min-h-svh bg-[linear-gradient(180deg,_var(--background)_0%,_color-mix(in_oklch,var(--background),white_24%)_100%)] px-6 py-8 text-foreground sm:px-10 lg:px-12">
-      <div className="mx-auto max-w-7xl">{children}</div>
-    </main>
+    <AuthenticatedShell role="applicant" onSignedOut={onSignedOut}>
+      <div className="relative isolate overflow-hidden rounded-[2rem] border border-border/70 bg-card/96 shadow-sm">
+        <div className="absolute inset-0 bg-[radial-gradient(circle_at_10%_18%,_rgba(95,161,125,0.15),_transparent_30%),radial-gradient(circle_at_88%_18%,_rgba(124,139,168,0.12),_transparent_32%),linear-gradient(180deg,_var(--background)_0%,_color-mix(in_oklch,var(--background),var(--muted)_8%)_100%)]" />
+        <div className="relative flex flex-col gap-8 p-6 sm:p-8 lg:p-10">{children}</div>
+      </div>
+    </AuthenticatedShell>
   )
 }
 

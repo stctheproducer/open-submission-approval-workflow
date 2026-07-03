@@ -7,6 +7,7 @@ import {
   ApplicationStatusBadge,
   ReviewStateBadge,
 } from "@/components/workflow-badge"
+import { AuthenticatedShell } from "@/components/authenticated-shell"
 import { WorkflowTimeline } from "@/components/workflow-timeline"
 import { ErrorAlert } from "@/components/workspace-alert"
 import { Button } from "@/components/ui/button"
@@ -31,18 +32,20 @@ function ReviewerAppShell({
   eyebrow,
   title,
   description,
+  onSignedOut,
   children,
 }: {
   eyebrow: string
   title: string
   description: string
+  onSignedOut?: () => void
   children: ReactNode
 }) {
   return (
-    <main className="min-h-svh bg-background text-foreground">
-      <div className="relative isolate min-h-svh overflow-hidden">
+    <AuthenticatedShell role="reviewer" onSignedOut={onSignedOut}>
+      <div className="relative isolate overflow-hidden rounded-[2rem] border border-border/70 bg-card/96 shadow-sm">
         <div className="absolute inset-0 bg-[radial-gradient(circle_at_12%_12%,_rgba(95,161,125,0.16),_transparent_28%),radial-gradient(circle_at_88%_18%,_rgba(124,139,168,0.12),_transparent_30%),linear-gradient(180deg,_var(--background)_0%,_color-mix(in_oklch,var(--background),var(--muted)_8%)_100%)]" />
-        <div className="relative mx-auto flex min-h-svh w-full max-w-7xl flex-col gap-8 px-6 py-8 sm:px-10 lg:px-12">
+        <div className="relative flex flex-col gap-8 p-6 sm:p-8 lg:p-10">
           <section className="rounded-[2rem] border border-border/80 bg-card/96 p-8 shadow-sm backdrop-blur">
             <div className="max-w-3xl space-y-4">
               <p className="text-sm font-semibold tracking-[0.24em] text-primary uppercase">
@@ -60,7 +63,7 @@ function ReviewerAppShell({
           {children}
         </div>
       </div>
-    </main>
+    </AuthenticatedShell>
   )
 }
 
@@ -430,7 +433,11 @@ function DecisionCommentCard({
   )
 }
 
-export function ReviewerWorkspacePage() {
+export function ReviewerWorkspacePage({
+  onSignedOut,
+}: {
+  onSignedOut?: () => void
+}) {
   const {
     activeReviewState,
     actionError,
@@ -448,6 +455,7 @@ export function ReviewerWorkspacePage() {
   if (queueQuery.isLoading) {
     return (
       <ReviewerAppShell
+        onSignedOut={onSignedOut}
         eyebrow="Reviewer area"
         title="Your queue is loading."
         description="Fetch the current queue and start with the work that is ready for review."
@@ -460,6 +468,7 @@ export function ReviewerWorkspacePage() {
   if (queueQuery.error || !reviewQueue) {
     return (
       <ReviewerAppShell
+        onSignedOut={onSignedOut}
         eyebrow="Reviewer area"
         title="Your queue is unavailable."
         description="The reviewer workspace could not load its queue right now."
@@ -471,6 +480,7 @@ export function ReviewerWorkspacePage() {
 
   return (
     <ReviewerAppShell
+      onSignedOut={onSignedOut}
       eyebrow="Reviewer area"
       title="Review work in one place."
       description="The queue shows submitted applications plus the work assigned to you. Start review from the queue, then decide with the application timeline in view."
@@ -550,7 +560,11 @@ export function ReviewerWorkspacePage() {
   )
 }
 
-export function ReviewerApplicationPage() {
+export function ReviewerApplicationPage({
+  onSignedOut,
+}: {
+  onSignedOut?: () => void
+}) {
   const params = useParams()
   const applicationId = Number(params.id)
   const {
@@ -582,6 +596,7 @@ export function ReviewerApplicationPage() {
   if (applicationQuery.isLoading) {
     return (
       <ReviewerAppShell
+        onSignedOut={onSignedOut}
         eyebrow="Reviewer area"
         title="Loading application detail."
         description="Pulling the current application and its audit history into the review workspace."
@@ -594,6 +609,7 @@ export function ReviewerApplicationPage() {
   if (applicationQuery.error || !application) {
     return (
       <ReviewerAppShell
+        onSignedOut={onSignedOut}
         eyebrow="Reviewer area"
         title="Application detail unavailable."
         description="The reviewer workspace could not load that application right now."
@@ -642,6 +658,7 @@ export function ReviewerApplicationPage() {
 
   return (
     <ReviewerAppShell
+      onSignedOut={onSignedOut}
       eyebrow="Reviewer area"
       title={title}
       description="Review the current record, check the embedded timeline, and use the deliberate workflow actions from one place."
