@@ -18,3 +18,9 @@ capability: application-drafts
 
 - Given an authenticated applicant who owns a draft application, when they open that application from their workspace, then they can review the current application status and record details.
 - Given an applicant attempting to open a draft application they do not own, when they try to access that record, then the application stays private and its details are not revealed.
+
+### Applicants can reopen requested-changes applications back to draft
+
+- Given an authenticated applicant who owns an application in requested changes, when they explicitly reopen that record, then the same application returns to draft so editing can resume.
+- Given an application that is not in requested changes, when someone tries to reopen it to draft through this journey, then the action is rejected and the application stays in its current state.
+- Given an applicant attempting to reopen another applicant's requested-changes application, when they try to perform the reopen action, then the application stays private and unchanged.
