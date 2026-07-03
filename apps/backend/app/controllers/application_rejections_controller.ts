@@ -13,9 +13,6 @@ export default class ApplicationRejectionsController {
     workflowService: ApplicationWorkflowService
   ) {
     const user = auth.getUserOrFail()
-    if (user.role !== 'reviewer') {
-      return response.forbidden({ errors: [{ message: 'Forbidden' }] })
-    }
 
     const application = await Application.findOrFail(params.application_id)
     await bouncer.with(ApplicationPolicy).authorize('reject', application)

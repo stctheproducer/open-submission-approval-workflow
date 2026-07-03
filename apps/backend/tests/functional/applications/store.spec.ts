@@ -1,6 +1,7 @@
 import { test } from '@japa/runner'
 import testUtils from '@adonisjs/core/services/test_utils'
 import { UserFactory } from '#database/factories/user_factory'
+import { assertProblemDetails } from './problem_details.js'
 
 test.group('Applications store', (group) => {
   group.each.setup(() => testUtils.db('test').truncate())
@@ -32,6 +33,7 @@ test.group('Applications store', (group) => {
     const response = await client.visit('applicant.applications.store').json({})
 
     response.assertStatus(401)
+    assertProblemDetails(response.body(), 401)
   })
 
   test('rejects an invalid store payload with field-level errors (422)', async ({ client }) => {
@@ -41,12 +43,9 @@ test.group('Applications store', (group) => {
       .visit('applicant.applications.store')
       .withGuard('web')
       .loginAs(applicant)
-      .json({ contactEmail: 'not-an-email' })
+      .json({ contactEmail: 'not-an-email', category: 'Unsupported' as any })
 
     response.assertStatus(422)
-    const body = response.body() as any
-    if (!body.errors || !Array.isArray(body.errors) || body.errors.length === 0) {
-      throw new Error(`Expected errors array, got ${JSON.stringify(body)}`)
-    }
+    assertProblemDetails(response.body(), 422, { validation: true })
   })
 })

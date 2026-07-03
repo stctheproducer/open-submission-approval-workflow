@@ -39,7 +39,7 @@ export default class ApplicationsController {
     const application = await Application.query()
       .where('id', params.id)
       .where('userId', user.id)
-      .preload('auditLogEntries', (query) => {
+      .preload('statusTransitions', (query) => {
         query.preload('actor').orderBy('createdAt', 'asc')
       })
       .firstOrFail()

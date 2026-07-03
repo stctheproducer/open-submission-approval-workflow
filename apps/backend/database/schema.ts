@@ -11,6 +11,7 @@ export class ApplicationSchema extends BaseModel {
   static $columns = [
     'amount',
     'assignedReviewerId',
+    'attachmentKey',
     'contactEmail',
     'contactName',
     'createdAt',
@@ -28,6 +29,8 @@ export class ApplicationSchema extends BaseModel {
   declare amount: string | null
   @column()
   declare assignedReviewerId: number | null
+  @column()
+  declare attachmentKey: string | null
   @column()
   declare contactEmail: string | null
   @column()

@@ -5,6 +5,7 @@ import User from '#models/user'
 import { ApplicationFactory } from '#database/factories/application_factory'
 import { ApplicationStatus } from '#values/application_status'
 import { ApplicationAuditEntryFactory } from '#database/factories/application_audit_entry_factory'
+import { assertProblemDetails } from './problem_details.js'
 
 async function createReviewer() {
   const reviewer = await UserFactory.create()
@@ -21,11 +22,14 @@ test.group('Application change requests', (group) => {
       status: ApplicationStatus.UNDER_REVIEW,
     }).create()
 
-    const response = await client.visit('reviewer.application_change_requests.store', {
-      id: application.id,
-    }).json({ comment: 'Please update the budget section' })
+    const response = await client
+      .visit('reviewer.application_change_requests.store', {
+        id: application.id,
+      })
+      .json({ comment: 'Please update the budget section' })
 
     response.assertStatus(401)
+    assertProblemDetails(response.body(), 401)
   })
 
   test('rejects non-reviewer users from requesting changes (403)', async ({ client }) => {
@@ -41,6 +45,7 @@ test.group('Application change requests', (group) => {
       .json({ comment: 'Please update the budget section' })
 
     response.assertStatus(403)
+    assertProblemDetails(response.body(), 403)
   })
 
   test('rejects an unassigned reviewer from requesting changes (403)', async ({ client, db }) => {
@@ -60,6 +65,7 @@ test.group('Application change requests', (group) => {
       .json({ comment: 'Please update the budget section' })
 
     response.assertStatus(403)
+    assertProblemDetails(response.body(), 403)
     await db.assertHas('applications', {
       id: application.id,
       status: ApplicationStatus.UNDER_REVIEW,
@@ -67,40 +73,37 @@ test.group('Application change requests', (group) => {
     })
   })
 
-  test(
-    'rejects invalid comment payloads with field-level validation errors (422)',
-    async ({ client, db }) => {
-      const reviewer = await createReviewer()
-      const applicant = await UserFactory.create()
-      const application = await ApplicationFactory.merge({
-        userId: applicant.id,
-        status: ApplicationStatus.UNDER_REVIEW,
-        assignedReviewerId: reviewer.id,
-      }).create()
+  test('rejects invalid comment payloads with field-level validation errors (422)', async ({
+    client,
+    db,
+  }) => {
+    const reviewer = await createReviewer()
+    const applicant = await UserFactory.create()
+    const application = await ApplicationFactory.merge({
+      userId: applicant.id,
+      status: ApplicationStatus.UNDER_REVIEW,
+      assignedReviewerId: reviewer.id,
+    }).create()
 
-      const rows = [
-        { body: {}, label: 'missing' },
-        { body: { comment: '   ' }, label: 'blank' },
-        { body: { comment: 'x'.repeat(2001) }, label: 'too-long' },
-      ]
+    const rows = [
+      { body: {}, label: 'missing' },
+      { body: { comment: '   ' }, label: 'blank' },
+      { body: { comment: 'x'.repeat(2001) }, label: 'too-long' },
+    ]
 
-      for (const row of rows) {
-        const response = await client
-          .visit('reviewer.application_change_requests.store', { id: application.id })
-          .withGuard('web')
-          .loginAs(reviewer)
-          .json(row.body as any)
+    for (const row of rows) {
+      const response = await client
+        .visit('reviewer.application_change_requests.store', { id: application.id })
+        .withGuard('web')
+        .loginAs(reviewer)
+        .json(row.body as any)
 
-        response.assertStatus(422)
-        const body = response.body() as any
-        if (!Array.isArray(body.errors) || body.errors.length === 0) {
-          throw new Error(`Expected validation errors for ${row.label}, got ${JSON.stringify(body)}`)
-        }
-      }
-
-      await db.assertMissing('application_audit_entries', { application_id: application.id })
+      response.assertStatus(422)
+      assertProblemDetails(response.body(), 422, { validation: true })
     }
-  )
+
+    await db.assertMissing('application_audit_entries', { application_id: application.id })
+  })
 
   test('requests change on an eligible under-review application and returns the updated summary (200)', async ({
     client,
@@ -166,6 +169,7 @@ test.group('Application change requests', (group) => {
       .json({ comment: 'Please update the budget section' })
 
     response.assertStatus(409)
+    assertProblemDetails(response.body(), 409)
     await db.assertHas('applications', {
       id: application.id,
       status: ApplicationStatus.APPROVED,
@@ -181,5 +185,6 @@ test.group('Application change requests', (group) => {
       .json({ comment: 'Please update the budget section' })
 
     response.assertStatus(404)
+    assertProblemDetails(response.body(), 404)
   })
 })

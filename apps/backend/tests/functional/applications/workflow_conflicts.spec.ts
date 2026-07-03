@@ -6,6 +6,7 @@ import { ApplicationFactory } from '#database/factories/application_factory'
 import { ApplicationStatus } from '#values/application_status'
 import { ApplicationAuditEntryFactory } from '#database/factories/application_audit_entry_factory'
 import { ApplicationStatusTransitionFactory } from '#database/factories/application_status_transition_factory'
+import { assertProblemDetails } from './problem_details.js'
 
 async function createApplicant() {
   const applicant = await UserFactory.create()
@@ -168,10 +169,7 @@ test.group('Workflow conflicts', (group) => {
         .json(row.body as any)
 
       response.assertStatus(409)
-      const body = response.body() as any
-      if (!Array.isArray(body.errors) || body.errors.length === 0) {
-        throw new Error(`Expected error envelope, got ${JSON.stringify(body)}`)
-      }
+      assertProblemDetails(response.body(), 409)
 
       await db.assertHas('applications', {
         id: Number(row.path.match(/applications\/(\d+)/)?.[1]),
@@ -224,14 +222,9 @@ test.group('Workflow conflicts', (group) => {
         .json({}),
     ]
 
-    for (const response of responses) {
-      const body = response.body() as any
-      if (!Array.isArray(body.errors) || body.errors.length === 0) {
-        throw new Error(`Expected error envelope, got ${JSON.stringify(body)}`)
-      }
-      if (typeof body.errors[0]?.message !== 'string') {
-        throw new Error(`Expected error message, got ${JSON.stringify(body)}`)
-      }
-    }
+    assertProblemDetails(responses[0].body(), 409)
+    assertProblemDetails(responses[1].body(), 422, { validation: true })
+    assertProblemDetails(responses[2].body(), 403)
+    assertProblemDetails(responses[3].body(), 404)
   })
 })

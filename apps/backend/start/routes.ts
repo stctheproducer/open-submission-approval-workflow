@@ -37,6 +37,13 @@ router
     router
       .group(() => {
         router
+          .get('application-option-sets', [controllers.ApplicationOptionSets, 'index'])
+          .as('applicationOptionSets.index')
+        router
+          .post('applications/:id/attachment', [controllers.ApplicationAttachments, 'store'])
+          .as('applications.attachment.store')
+          .where('id', router.matchers.number())
+        router
           .resource('applications', controllers.Applications)
           .apiOnly()
           .only(['index', 'store', 'show', 'update'])
@@ -63,10 +70,7 @@ router
           ])
           .where('applicationId', router.matchers.number())
         router
-          .post('applications/:id/change-request', [
-            controllers.ApplicationChangeRequests,
-            'store',
-          ])
+          .post('applications/:id/change-request', [controllers.ApplicationChangeRequests, 'store'])
           .where('id', router.matchers.number())
         router
           .post('applications/:application_id/rejections', [

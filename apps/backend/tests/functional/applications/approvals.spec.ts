@@ -5,6 +5,7 @@ import User from '#models/user'
 import { ApplicationFactory } from '#database/factories/application_factory'
 import { ApplicationStatus } from '#values/application_status'
 import { ApplicationStatusTransitionFactory } from '#database/factories/application_status_transition_factory'
+import { assertProblemDetails } from './problem_details.js'
 
 async function createReviewer() {
   const reviewer = await UserFactory.create()
@@ -26,6 +27,7 @@ test.group('Application approvals', (group) => {
     })
 
     response.assertStatus(401)
+    assertProblemDetails(response.body(), 401)
   })
 
   test('rejects non-reviewer users from approving an application (403)', async ({ client }) => {
@@ -40,6 +42,7 @@ test.group('Application approvals', (group) => {
       .loginAs(applicant)
 
     response.assertStatus(403)
+    assertProblemDetails(response.body(), 403)
   })
 
   test('rejects an unassigned reviewer from approving an application (403)', async ({
@@ -61,6 +64,7 @@ test.group('Application approvals', (group) => {
       .loginAs(reviewer)
 
     response.assertStatus(403)
+    assertProblemDetails(response.body(), 403)
     await db.assertHas('applications', {
       id: application.id,
       status: ApplicationStatus.UNDER_REVIEW,
@@ -136,6 +140,7 @@ test.group('Application approvals', (group) => {
       .loginAs(reviewer)
 
     response.assertStatus(409)
+    assertProblemDetails(response.body(), 409)
     await db.assertHas('applications', {
       id: application.id,
       status: ApplicationStatus.APPROVED,

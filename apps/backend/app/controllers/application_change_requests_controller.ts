@@ -12,9 +12,6 @@ export default class ApplicationChangeRequestsController {
     workflowService: ApplicationWorkflowService
   ) {
     const user = auth.getUserOrFail()
-    if (user.role !== 'reviewer') {
-      return response.forbidden({ errors: [{ message: 'Forbidden' }] })
-    }
 
     const payload = await request.validateUsing(requestApplicationChangeValidator)
     const application = await Application.findOrFail(params.id)
@@ -22,6 +19,8 @@ export default class ApplicationChangeRequestsController {
     const updated = await workflowService.requestChange(application, user, payload.comment)
 
     response.status(200)
-    return serialize.withoutWrapping({ application: { id: updated.id, status: updated.status, updatedAt: updated.updatedAt } })
+    return serialize.withoutWrapping({
+      application: { id: updated.id, status: updated.status, updatedAt: updated.updatedAt },
+    })
   }
 }

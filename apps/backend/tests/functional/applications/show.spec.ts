@@ -2,9 +2,10 @@ import { test } from '@japa/runner'
 import testUtils from '@adonisjs/core/services/test_utils'
 import { UserFactory } from '#database/factories/user_factory'
 import { ApplicationFactory } from '#database/factories/application_factory'
-import { ApplicationAuditLogEntryFactory } from '#database/factories/application_audit_log_entry_factory'
+import { ApplicationStatusTransitionFactory } from '#database/factories/application_status_transition_factory'
 import { DateTime } from 'luxon'
 import { ApplicationStatus } from '#values/application_status'
+import { assertProblemDetails } from './problem_details.js'
 
 const NON_EXISTENT_ID = 99999999
 
@@ -15,6 +16,7 @@ test.group('Applications show', (group) => {
     const application = await ApplicationFactory.create()
     const response = await client.visit('applicant.applications.show', { id: application.id })
     response.assertStatus(401)
+    assertProblemDetails(response.body(), 401)
   })
 
   test('shows an owned draft application and returns the wrapped resource (200)', async ({
@@ -40,6 +42,11 @@ test.group('Applications show', (group) => {
       },
     })
 
+    const body = response.body() as any
+    if (!Array.isArray(body.data.history) || body.data.history.length !== 0) {
+      throw new Error(`Expected no history entries, got ${JSON.stringify(body.data.history)}`)
+    }
+
     await db.assertHas('applications', { id: application.id, user_id: applicant.id })
   })
 
@@ -52,14 +59,14 @@ test.group('Applications show', (group) => {
       status: ApplicationStatus.SUBMITTED,
     }).create()
 
-    await ApplicationAuditLogEntryFactory.merge({
+    await ApplicationStatusTransitionFactory.merge({
       applicationId: application.id,
       actorUserId: applicant.id,
       previousStatus: ApplicationStatus.DRAFT,
       nextStatus: ApplicationStatus.SUBMITTED,
       createdAt: DateTime.now().minus({ minutes: 2 }),
     }).create()
-    await ApplicationAuditLogEntryFactory.merge({
+    await ApplicationStatusTransitionFactory.merge({
       applicationId: application.id,
       actorUserId: applicant.id,
       previousStatus: ApplicationStatus.SUBMITTED,
@@ -99,11 +106,13 @@ test.group('Applications show', (group) => {
       .withGuard('web')
       .loginAs(applicant)
     otherAppResponse.assertStatus(404)
+    assertProblemDetails(otherAppResponse.body(), 404)
 
     const nonExistentResponse = await client
       .visit('applicant.applications.show', { id: NON_EXISTENT_ID })
       .withGuard('web')
       .loginAs(applicant)
     nonExistentResponse.assertStatus(404)
+    assertProblemDetails(nonExistentResponse.body(), 404)
   })
 })

@@ -1,14 +1,13 @@
 import type { HttpContext } from '@adonisjs/core/http'
 import Application from '#models/application'
+import ApplicationPolicy from '#policies/application_policy'
 import ApplicationTransformer from '#transformers/application_transformer'
 import { reviewerApplicationsIndexValidator } from '#validators/reviewer_application'
 
 export default class ReviewerApplicationsController {
-  async index({ auth, request, response, serialize }: HttpContext) {
+  async index({ auth, bouncer, request, serialize }: HttpContext) {
     const user = auth.getUserOrFail()
-    if (user.role !== 'reviewer') {
-      return response.forbidden({ errors: [{ message: 'Forbidden' }] })
-    }
+    await bouncer.with(ApplicationPolicy).authorize('reviewQueue')
 
     const { reviewState } = await request.validateUsing(reviewerApplicationsIndexValidator)
     const page = Number(request.input('page', 1))
@@ -25,11 +24,9 @@ export default class ReviewerApplicationsController {
     return serialize(ApplicationTransformer.paginate(applications.all(), applications.getMeta()))
   }
 
-  async show({ auth, response, params, serialize }: HttpContext) {
+  async show({ auth, bouncer, params, serialize }: HttpContext) {
     const user = auth.getUserOrFail()
-    if (user.role !== 'reviewer') {
-      return response.forbidden({ errors: [{ message: 'Forbidden' }] })
-    }
+    await bouncer.with(ApplicationPolicy).authorize('reviewQueue')
 
     const application = await Application.query()
       .withScopes((scopes) => scopes.reviewQueue(user.id))

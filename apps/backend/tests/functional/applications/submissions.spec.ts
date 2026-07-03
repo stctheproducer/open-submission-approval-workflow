@@ -2,7 +2,11 @@ import { test } from '@japa/runner'
 import testUtils from '@adonisjs/core/services/test_utils'
 import { UserFactory } from '#database/factories/user_factory'
 import { ApplicationFactory } from '#database/factories/application_factory'
+import { ApplicationAuditLogEntryFactory } from '#database/factories/application_audit_log_entry_factory'
 import { ApplicationStatus } from '#values/application_status'
+import { ApplicationAuditEntryFactory } from '#database/factories/application_audit_entry_factory'
+import { ApplicationStatusTransitionFactory } from '#database/factories/application_status_transition_factory'
+import { assertProblemDetails } from './problem_details.js'
 
 test.group('Application submissions', (group) => {
   group.each.setup(() => testUtils.db('test').truncate())
@@ -15,6 +19,7 @@ test.group('Application submissions', (group) => {
       .json({})
 
     response.assertStatus(401)
+    assertProblemDetails(response.body(), 401)
   })
 
   test('submits an owned draft application and returns the submitted detail with the first history entry (200)', async ({
@@ -61,6 +66,85 @@ test.group('Application submissions', (group) => {
     })
   })
 
+  test('submits a reopened draft application and returns a distinct revision-round history entry (200)', async ({
+    client,
+    db,
+  }) => {
+    const applicant = await UserFactory.create()
+    const application = await ApplicationFactory.merge({
+      userId: applicant.id,
+      status: ApplicationStatus.CHANGES_REQUESTED,
+    }).create()
+
+    await ApplicationAuditLogEntryFactory.merge({
+      applicationId: application.id,
+      actorUserId: applicant.id,
+      previousStatus: ApplicationStatus.DRAFT,
+      nextStatus: ApplicationStatus.SUBMITTED,
+      comment: null,
+    }).create()
+
+    await ApplicationStatusTransitionFactory.merge({
+      applicationId: application.id,
+      actorUserId: applicant.id,
+      previousStatus: ApplicationStatus.DRAFT,
+      nextStatus: ApplicationStatus.SUBMITTED,
+      comment: null,
+    }).create()
+
+    await ApplicationAuditEntryFactory.merge({
+      applicationId: application.id,
+      actorId: applicant.id,
+      fromStatus: ApplicationStatus.SUBMITTED,
+      toStatus: ApplicationStatus.CHANGES_REQUESTED,
+      comment: 'Please update the budget section',
+    }).create()
+
+    const reopenResponse = await client
+      .visit('applicant.application_draft_reopenings.store', { id: application.id })
+      .withGuard('web')
+      .loginAs(applicant)
+
+    reopenResponse.assertStatus(200)
+
+    const response = await client
+      .visit('applicant.applications.submissions.store', { application_id: application.id })
+      .withGuard('web')
+      .loginAs(applicant)
+      .json({})
+
+    response.assertStatus(200)
+    response.assertBodyContains({
+      data: {
+        id: application.id,
+        status: ApplicationStatus.SUBMITTED,
+      },
+    })
+
+    const body = response.body() as any
+    if (!Array.isArray(body.data.history) || body.data.history.length < 2) {
+      throw new Error(`Expected revision history entries, got ${JSON.stringify(body.data.history)}`)
+    }
+
+    const lastEntry = body.data.history[body.data.history.length - 1]
+    if (
+      lastEntry.previousStatus !== ApplicationStatus.DRAFT ||
+      lastEntry.nextStatus !== ApplicationStatus.SUBMITTED
+    ) {
+      throw new Error(
+        `Expected revision-round submission history entry, got ${JSON.stringify(lastEntry)}`
+      )
+    }
+
+    await db.assertHas('applications', { id: application.id, status: ApplicationStatus.SUBMITTED })
+    await db.assertHas('application_audit_log_entries', {
+      application_id: application.id,
+      actor_user_id: applicant.id,
+      previous_status: ApplicationStatus.DRAFT,
+      next_status: ApplicationStatus.SUBMITTED,
+    })
+  })
+
   test('returns 404 when submitting a foreign or non-existent application', async ({ client }) => {
     const applicant = await UserFactory.create()
     const otherApplicant = await UserFactory.create()
@@ -74,6 +158,7 @@ test.group('Application submissions', (group) => {
       .loginAs(applicant)
       .json({})
     foreignResponse.assertStatus(404)
+    assertProblemDetails(foreignResponse.body(), 404)
 
     const missingResponse = await client
       .visit('applicant.applications.submissions.store', { application_id: 999999 })
@@ -81,6 +166,7 @@ test.group('Application submissions', (group) => {
       .loginAs(applicant)
       .json({})
     missingResponse.assertStatus(404)
+    assertProblemDetails(missingResponse.body(), 404)
   })
 
   test('rejects submission of a non-draft application with a conflict error (409)', async ({
@@ -100,6 +186,7 @@ test.group('Application submissions', (group) => {
       .json({})
 
     response.assertStatus(409)
+    assertProblemDetails(response.body(), 409)
     await db.assertHas('applications', { id: application.id, status: ApplicationStatus.SUBMITTED })
   })
 })

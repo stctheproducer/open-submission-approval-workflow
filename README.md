@@ -95,6 +95,8 @@ pnpm install
 
 This copies `apps/backend/.env.example` to `apps/backend/.env` if needed and generates `APP_KEY` when missing.
 
+The bootstrap command is Node-based, so it works in macOS, Linux, and native Windows shells without requiring Bash or WSL.
+
 ```bash
 pnpm setup
 ```

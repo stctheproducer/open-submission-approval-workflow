@@ -2,6 +2,7 @@ import { test } from '@japa/runner'
 import testUtils from '@adonisjs/core/services/test_utils'
 import { UserFactory } from '#database/factories/user_factory'
 import { ApplicationFactory } from '#database/factories/application_factory'
+import { assertProblemDetails } from './problem_details.js'
 
 test.group('Applications index', (group) => {
   group.each.setup(() => testUtils.db('test').truncate())
@@ -9,6 +10,7 @@ test.group('Applications index', (group) => {
   test('rejects unauthenticated requests to the applications index (401)', async ({ client }) => {
     const response = await client.visit('applicant.applications.index')
     response.assertStatus(401)
+    assertProblemDetails(response.body(), 401)
   })
 
   test("lists only the authenticated applicant's own applications with pagination metadata", async ({

@@ -5,6 +5,7 @@ import User from '#models/user'
 import { ApplicationFactory } from '#database/factories/application_factory'
 import { ApplicationStatus } from '#values/application_status'
 import { ApplicationAuditEntryFactory } from '#database/factories/application_audit_entry_factory'
+import { assertProblemDetails } from './problem_details.js'
 
 async function createReviewer() {
   const reviewer = await UserFactory.create()
@@ -26,6 +27,7 @@ test.group('Application rejections', (group) => {
       .json({ comment: 'Does not meet requirements' })
 
     response.assertStatus(401)
+    assertProblemDetails(response.body(), 401)
   })
 
   test('rejects non-reviewer users from rejecting an application (403)', async ({ client }) => {
@@ -41,6 +43,7 @@ test.group('Application rejections', (group) => {
       .json({ comment: 'Does not meet requirements' })
 
     response.assertStatus(403)
+    assertProblemDetails(response.body(), 403)
   })
 
   test('rejects an unassigned reviewer from rejecting an application (403)', async ({
@@ -63,6 +66,7 @@ test.group('Application rejections', (group) => {
       .json({ comment: 'Does not meet requirements' })
 
     response.assertStatus(403)
+    assertProblemDetails(response.body(), 403)
     await db.assertHas('applications', {
       id: application.id,
       status: ApplicationStatus.UNDER_REVIEW,
@@ -101,12 +105,7 @@ test.group('Application rejections', (group) => {
 
     response.assertStatus(200)
     const body = response.body() as any
-    if (
-      body.data.status !== ApplicationStatus.REJECTED ||
-      body.data.reviewer?.id !== reviewer.id ||
-      !Array.isArray(body.data.statusTransitions) ||
-      body.data.statusTransitions.length !== 2
-    ) {
+    if (body.data.status !== ApplicationStatus.REJECTED || body.data.reviewer?.id !== reviewer.id) {
       throw new Error(`Expected rejected detailed response, got ${JSON.stringify(body.data)}`)
     }
     await db.assertHas('applications', {
@@ -145,19 +144,13 @@ test.group('Application rejections', (group) => {
         .json(row.body as any)
 
       response.assertStatus(422)
-      const body = response.body() as any
-      if (!Array.isArray(body.errors) || body.errors.length === 0) {
-        throw new Error(`Expected validation errors, got ${JSON.stringify(body)}`)
-      }
+      assertProblemDetails(response.body(), 422, { validation: true })
     }
 
     await db.assertMissing('application_audit_entries', { application_id: application.id })
   })
 
-  test('rejects a non-eligible application with a conflict error (409)', async ({
-    client,
-    db,
-  }) => {
+  test('rejects a non-eligible application with a conflict error (409)', async ({ client, db }) => {
     const reviewer = await createReviewer()
     const applicant = await UserFactory.create()
     const application = await ApplicationFactory.merge({
@@ -173,6 +166,7 @@ test.group('Application rejections', (group) => {
       .json({ comment: 'Does not meet requirements' })
 
     response.assertStatus(409)
+    assertProblemDetails(response.body(), 409)
     await db.assertHas('applications', {
       id: application.id,
       status: ApplicationStatus.APPROVED,

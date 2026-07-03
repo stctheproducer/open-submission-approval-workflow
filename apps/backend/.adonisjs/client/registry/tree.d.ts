@@ -24,7 +24,13 @@ export interface ApiDefinition {
     }
   }
   applicant: {
+    applicationOptionSets: {
+      index: typeof routes['applicant.applicationOptionSets.index']
+    }
     applications: {
+      attachment: {
+        store: typeof routes['applicant.applications.attachment.store']
+      }
       index: typeof routes['applicant.applications.index']
       store: typeof routes['applicant.applications.store']
       show: typeof routes['applicant.applications.show']
