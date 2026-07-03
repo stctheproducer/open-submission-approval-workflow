@@ -3,6 +3,7 @@ import testUtils from '@adonisjs/core/services/test_utils'
 import { UserFactory } from '#database/factories/user_factory'
 import User from '#models/user'
 import { ApplicationFactory } from '#database/factories/application_factory'
+import { ApplicationStatusTransitionFactory } from '#database/factories/application_status_transition_factory'
 import { ApplicationStatus } from '#values/application_status'
 import { assertProblemDetails } from './problem_details.js'
 
@@ -85,6 +86,65 @@ test.group('Reviewer applications', (group) => {
     }
   })
 
+  test('keeps the selected review-state filter on reviewer queue pagination links (200)', async ({
+    client,
+  }) => {
+    const reviewer = await createReviewer()
+    const applicant = await UserFactory.create()
+    await ApplicationFactory.merge({
+      userId: applicant.id,
+      status: ApplicationStatus.SUBMITTED,
+      title: 'Ready 1',
+    }).create()
+    await ApplicationFactory.merge({
+      userId: applicant.id,
+      status: ApplicationStatus.SUBMITTED,
+      title: 'Ready 2',
+    }).create()
+    await ApplicationFactory.merge({
+      userId: applicant.id,
+      status: ApplicationStatus.UNDER_REVIEW,
+      assignedReviewerId: reviewer.id,
+      title: 'Owned 1',
+    }).create()
+    await ApplicationFactory.merge({
+      userId: applicant.id,
+      status: ApplicationStatus.UNDER_REVIEW,
+      assignedReviewerId: reviewer.id,
+      title: 'Owned 2',
+    }).create()
+
+    const response = await client
+      .visit('reviewer.applications.index')
+      .qs({ reviewState: 'owned', perPage: 1 })
+      .withGuard('web')
+      .loginAs(reviewer)
+
+    response.assertStatus(200)
+    response.assertBodyContains({
+      data: [
+        {
+          status: ApplicationStatus.UNDER_REVIEW,
+          assignedReviewer: {
+            id: reviewer.id,
+          },
+        },
+      ],
+    })
+
+    const body = response.body() as any
+    if (
+      typeof body.metadata.nextPageUrl !== 'string' ||
+      !body.metadata.nextPageUrl.includes('reviewState=owned')
+    ) {
+      throw new Error(
+        `Expected filtered pagination links to preserve reviewState, got ${JSON.stringify(
+          body.metadata
+        )}`
+      )
+    }
+  })
+
   test('shows an application detail with the reviewer-detail variant (200)', async ({ client }) => {
     const reviewer = await createReviewer()
     const applicant = await UserFactory.create()
@@ -97,6 +157,12 @@ test.group('Reviewer applications', (group) => {
       description: 'Detail desc',
       amount: '1234.56',
     }).create()
+    await ApplicationStatusTransitionFactory.merge({
+      applicationId: application.id,
+      actorUserId: reviewer.id,
+      previousStatus: ApplicationStatus.SUBMITTED,
+      nextStatus: ApplicationStatus.UNDER_REVIEW,
+    }).create()
 
     const response = await client
       .visit('reviewer.applications.show', { id: application.id })
@@ -105,7 +171,15 @@ test.group('Reviewer applications', (group) => {
 
     response.assertStatus(200)
     const body = response.body() as any
-    if (!body.data.applicant || !body.data.assignedReviewer || body.data.reviewState !== 'owned') {
+    if (
+      !body.data.applicant ||
+      !body.data.assignedReviewer ||
+      body.data.reviewState !== 'owned' ||
+      !Array.isArray(body.data.statusTransitions) ||
+      body.data.statusTransitions.length !== 1 ||
+      !Array.isArray(body.data.history) ||
+      body.data.history.length !== 1
+    ) {
       throw new Error(`Expected reviewer detail payload, got ${JSON.stringify(body.data)}`)
     }
   })
@@ -179,6 +253,12 @@ test.group('Reviewer applications', (group) => {
       description: 'Need review',
       amount: '2500.00',
     }).create()
+    await ApplicationStatusTransitionFactory.merge({
+      applicationId: application.id,
+      actorUserId: reviewer.id,
+      previousStatus: ApplicationStatus.SUBMITTED,
+      nextStatus: ApplicationStatus.UNDER_REVIEW,
+    }).create()
 
     const response = await (client.visit as any)('reviewer.application_review_starts.store', {
       id: application.id,
@@ -190,7 +270,11 @@ test.group('Reviewer applications', (group) => {
     const body = response.body() as any
     if (
       body.data.status !== ApplicationStatus.UNDER_REVIEW ||
-      body.data.assignedReviewer?.id !== reviewer.id
+      body.data.assignedReviewer?.id !== reviewer.id ||
+      !Array.isArray(body.data.statusTransitions) ||
+      body.data.statusTransitions.length !== 2 ||
+      !Array.isArray(body.data.history) ||
+      body.data.history.length !== 2
     ) {
       throw new Error(`Expected owned under-review detail, got ${JSON.stringify(body.data)}`)
     }
