@@ -67,6 +67,18 @@ export interface Registry {
       errorResponse: ExtractErrorResponse<Awaited<ReturnType<import('#controllers/access_tokens_controller').default['destroy']>>>
     }
   }
+  'applicant.applicationOptionSets.index': {
+    methods: ["GET","HEAD"]
+    pattern: '/api/v1/applicant/application-option-sets'
+    types: {
+      body: {}
+      paramsTuple: []
+      params: {}
+      query: {}
+      response: ExtractResponse<Awaited<ReturnType<import('#controllers/application_option_sets_controller').default['index']>>>
+      errorResponse: ExtractErrorResponse<Awaited<ReturnType<import('#controllers/application_option_sets_controller').default['index']>>>
+    }
+  }
   'applicant.applications.index': {
     methods: ["GET","HEAD"]
     pattern: '/api/v1/applicant/applications'

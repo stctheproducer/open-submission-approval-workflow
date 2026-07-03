@@ -61,7 +61,7 @@ test.group('Applications update', (group) => {
       .visit('applicant.applications.update', { id: application.id })
       .withGuard('web')
       .loginAs(applicant)
-      .json({ contactEmail: 'not-an-email' })
+      .json({ contactEmail: 'not-an-email', category: 'Unsupported' as any })
 
     response.assertStatus(422)
     const body = response.body() as { errors?: unknown[] }

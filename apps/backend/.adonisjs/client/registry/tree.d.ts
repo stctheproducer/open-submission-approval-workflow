@@ -24,6 +24,9 @@ export interface ApiDefinition {
     }
   }
   applicant: {
+    applicationOptionSets: {
+      index: typeof routes['applicant.applicationOptionSets.index']
+    }
     applications: {
       index: typeof routes['applicant.applications.index']
       store: typeof routes['applicant.applications.store']

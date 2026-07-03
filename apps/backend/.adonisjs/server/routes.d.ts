@@ -9,6 +9,7 @@ export type ScannedRoutes = {
     'auth.access_tokens.store': { paramsTuple?: []; params?: {} }
     'profile.profile.show': { paramsTuple?: []; params?: {} }
     'profile.access_tokens.destroy': { paramsTuple?: []; params?: {} }
+    'applicant.applicationOptionSets.index': { paramsTuple?: []; params?: {} }
     'applicant.applications.index': { paramsTuple?: []; params?: {} }
     'applicant.applications.store': { paramsTuple?: []; params?: {} }
     'applicant.applications.show': { paramsTuple: [ParamValue]; params: {'id': ParamValue} }
@@ -25,6 +26,7 @@ export type ScannedRoutes = {
   GET: {
     'drive.fs.serve': { paramsTuple: [...ParamValue[]]; params: {'*': ParamValue[]} }
     'profile.profile.show': { paramsTuple?: []; params?: {} }
+    'applicant.applicationOptionSets.index': { paramsTuple?: []; params?: {} }
     'applicant.applications.index': { paramsTuple?: []; params?: {} }
     'applicant.applications.show': { paramsTuple: [ParamValue]; params: {'id': ParamValue} }
     'reviewer.applications.index': { paramsTuple?: []; params?: {} }
@@ -33,6 +35,7 @@ export type ScannedRoutes = {
   HEAD: {
     'drive.fs.serve': { paramsTuple: [...ParamValue[]]; params: {'*': ParamValue[]} }
     'profile.profile.show': { paramsTuple?: []; params?: {} }
+    'applicant.applicationOptionSets.index': { paramsTuple?: []; params?: {} }
     'applicant.applications.index': { paramsTuple?: []; params?: {} }
     'applicant.applications.show': { paramsTuple: [ParamValue]; params: {'id': ParamValue} }
     'reviewer.applications.index': { paramsTuple?: []; params?: {} }

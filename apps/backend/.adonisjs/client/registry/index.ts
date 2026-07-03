@@ -36,6 +36,12 @@ const routes = {
     tokens: [{"old":"/api/v1/account/logout","type":0,"val":"api","end":""},{"old":"/api/v1/account/logout","type":0,"val":"v1","end":""},{"old":"/api/v1/account/logout","type":0,"val":"account","end":""},{"old":"/api/v1/account/logout","type":0,"val":"logout","end":""}],
     types: placeholder as Registry['profile.access_tokens.destroy']['types'],
   },
+  'applicant.applicationOptionSets.index': {
+    methods: ["GET","HEAD"],
+    pattern: '/api/v1/applicant/application-option-sets',
+    tokens: [{"old":"/api/v1/applicant/application-option-sets","type":0,"val":"api","end":""},{"old":"/api/v1/applicant/application-option-sets","type":0,"val":"v1","end":""},{"old":"/api/v1/applicant/application-option-sets","type":0,"val":"applicant","end":""},{"old":"/api/v1/applicant/application-option-sets","type":0,"val":"application-option-sets","end":""}],
+    types: placeholder as Registry['applicant.applicationOptionSets.index']['types'],
+  },
   'applicant.applications.index': {
     methods: ["GET","HEAD"],
     pattern: '/api/v1/applicant/applications',

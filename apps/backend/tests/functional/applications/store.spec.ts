@@ -41,7 +41,7 @@ test.group('Applications store', (group) => {
       .visit('applicant.applications.store')
       .withGuard('web')
       .loginAs(applicant)
-      .json({ contactEmail: 'not-an-email' })
+      .json({ contactEmail: 'not-an-email', category: 'Unsupported' as any })
 
     response.assertStatus(422)
     const body = response.body() as any

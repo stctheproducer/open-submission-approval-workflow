@@ -37,6 +37,9 @@ router
     router
       .group(() => {
         router
+          .get('application-option-sets', [controllers.ApplicationOptionSets, 'index'])
+          .as('applicationOptionSets.index')
+        router
           .resource('applications', controllers.Applications)
           .apiOnly()
           .only(['index', 'store', 'show', 'update'])
