@@ -2,10 +2,10 @@ import { test } from '@japa/runner'
 import testUtils from '@adonisjs/core/services/test_utils'
 import db from '@adonisjs/lucid/services/db'
 import User from '#models/user'
-import AccessTokensController from '#controllers/access_tokens_controller'
 import SessionLoginSeeder, {
   SESSION_LOGIN_SEED_USERS,
 } from '#database/seeders/session_login_seeder'
+import { assertProblemDetails } from '../applications/problem_details.js'
 
 test.group('Session login seed', (group) => {
   group.each.setup(async () => {
@@ -13,76 +13,91 @@ test.group('Session login seed', (group) => {
     await new SessionLoginSeeder(db.connection('test')).run()
   })
 
-  test('signs in a seeded applicant through the shared session login and logs out', async ({
-    client,
-  }) => {
-    const applicant = SESSION_LOGIN_SEED_USERS.applicant
-    const seededApplicant = await User.query().where('email', applicant.email).firstOrFail()
+  test('signs in a seeded {role} through the shared session login and sets a session cookie')
+    .with([
+      SESSION_LOGIN_SEED_USERS.applicant,
+      SESSION_LOGIN_SEED_USERS.reviewer,
+    ])
+    .run(async ({ client }, user) => {
+      const loginResponse = await client.visit('auth.sessions.store').json({
+        email: user.email,
+        password: user.password,
+      })
 
-    const loginResponse = await client.post('/api/v1/auth/login').json({
-      email: applicant.email,
-      password: applicant.password,
-    })
-
-    loginResponse.assertStatus(200)
-    loginResponse.assertBodyContains({
-      data: {
+      loginResponse.assertStatus(200)
+      loginResponse.assertBodyContains({
         user: {
-          email: applicant.email,
+          email: user.email,
+          role: user.role,
         },
-      },
+      })
+
+      const loginBody = loginResponse.body() as {
+        user?: { email?: string; role?: string }
+        token?: string
+      }
+      if (typeof loginBody.token !== 'undefined') {
+        throw new Error(`Expected no login token, got ${JSON.stringify(loginBody)}`)
+      }
+
+      const sessionCookie = loginResponse.cookie('adonis-session')
+      if (!sessionCookie) {
+        throw new Error('Expected the login response to set the adonis-session cookie')
+      }
     })
 
-    const loginBody = loginResponse.body() as { data: { token: string } }
-    if (typeof loginBody.data.token !== 'string' || loginBody.data.token.length === 0) {
-      throw new Error(`Expected a login token, got ${JSON.stringify(loginBody)}`)
-    }
+  test('rejects invalid credentials without signing the user in', async ({ client }) => {
+    const user = SESSION_LOGIN_SEED_USERS.applicant
 
-    const logoutResponse = await new AccessTokensController().destroy({
-      auth: {
-        getUserOrFail: () => seededApplicant,
-      },
-    } as any)
+    const response = await client.visit('auth.sessions.store').json({
+      email: user.email,
+      password: 'incorrect-password',
+    })
 
-    if (logoutResponse.message !== 'Logged out successfully') {
-      throw new Error(`Expected logout success, got ${JSON.stringify(logoutResponse)}`)
-    }
+    response.assertStatus(400)
+    assertProblemDetails(response.body(), 400)
   })
 
-  test('signs in a seeded reviewer through the shared session login and logs out', async ({
+  test('returns the current authenticated user with role after a web-session login', async ({
     client,
   }) => {
-    const reviewer = SESSION_LOGIN_SEED_USERS.reviewer
-    const seededReviewer = await User.query().where('email', reviewer.email).firstOrFail()
+    const user = SESSION_LOGIN_SEED_USERS.applicant
+    const authenticatedUser = await User.findByOrFail('email', user.email)
 
-    const loginResponse = await client.post('/api/v1/auth/login').json({
-      email: reviewer.email,
-      password: reviewer.password,
-    })
+    const response = await client
+      .visit('profile.profile.show')
+      .withGuard('web')
+      .loginAs(authenticatedUser)
 
-    loginResponse.assertStatus(200)
-    loginResponse.assertBodyContains({
+    response.assertStatus(200)
+    response.assertBodyContains({
       data: {
-        user: {
-          email: reviewer.email,
-        },
+        email: user.email,
+        role: user.role,
       },
     })
+  })
 
-    const loginBody = loginResponse.body() as { data: { token: string } }
-    if (typeof loginBody.data.token !== 'string' || loginBody.data.token.length === 0) {
-      throw new Error(`Expected a login token, got ${JSON.stringify(loginBody)}`)
-    }
+  test('rejects unauthenticated profile lookup', async ({ client }) => {
+    const response = await client.visit('profile.profile.show')
 
-    const logoutResponse = await new AccessTokensController().destroy({
-      auth: {
-        getUserOrFail: () => seededReviewer,
-      },
-    } as any)
+    response.assertStatus(401)
+    assertProblemDetails(response.body(), 401)
+  })
 
-    if (logoutResponse.message !== 'Logged out successfully') {
-      throw new Error(`Expected logout success, got ${JSON.stringify(logoutResponse)}`)
-    }
+  test('logs out an authenticated web-session user', async ({ client }) => {
+    const user = SESSION_LOGIN_SEED_USERS.reviewer
+    const authenticatedUser = await User.findByOrFail('email', user.email)
+
+    const response = await client
+      .visit('profile.sessions.destroy')
+      .withGuard('web')
+      .loginAs(authenticatedUser)
+
+    response.assertStatus(200)
+    response.assertBodyContains({
+      message: 'Logged out successfully',
+    })
   })
 
   test('seeds one applicant and one reviewer for local sign-in testing', async ({ db: testDb }) => {

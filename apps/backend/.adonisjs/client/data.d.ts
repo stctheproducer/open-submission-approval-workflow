@@ -7,6 +7,7 @@
 import type { InferData, InferVariants } from '@adonisjs/core/types/transformers'
 import type ApplicationStatusTransitionTransformer from '#transformers/application_status_transition_transformer'
 import type ApplicationTransformer from '#transformers/application_transformer'
+import type AuthenticatedUserTransformer from '#transformers/authenticated_user_transformer'
 import type UserTransformer from '#transformers/user_transformer'
 
 export namespace Data {
@@ -17,6 +18,10 @@ export namespace Data {
   export type Application = InferData<ApplicationTransformer>
   export namespace Application {
     export type Variants = InferVariants<ApplicationTransformer>
+  }
+  export type AuthenticatedUser = InferData<AuthenticatedUserTransformer>
+  export namespace AuthenticatedUser {
+    export type Variants = InferVariants<AuthenticatedUserTransformer>
   }
   export type User = InferData<UserTransformer>
   export namespace User {

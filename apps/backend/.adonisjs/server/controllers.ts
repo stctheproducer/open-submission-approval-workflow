@@ -17,4 +17,5 @@ export const controllers = {
   NewAccount: () => import('#controllers/new_account_controller'),
   Profile: () => import('#controllers/profile_controller'),
   ReviewerApplications: () => import('#controllers/reviewer_applications_controller'),
+  Sessions: () => import('#controllers/sessions_controller'),
 }

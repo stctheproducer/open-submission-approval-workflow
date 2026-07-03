@@ -6,9 +6,9 @@ export type ScannedRoutes = {
   ALL: {
     'drive.fs.serve': { paramsTuple: [...ParamValue[]]; params: {'*': ParamValue[]} }
     'auth.new_account.store': { paramsTuple?: []; params?: {} }
-    'auth.access_tokens.store': { paramsTuple?: []; params?: {} }
+    'auth.sessions.store': { paramsTuple?: []; params?: {} }
     'profile.profile.show': { paramsTuple?: []; params?: {} }
-    'profile.access_tokens.destroy': { paramsTuple?: []; params?: {} }
+    'profile.sessions.destroy': { paramsTuple?: []; params?: {} }
     'applicant.applicationOptionSets.index': { paramsTuple?: []; params?: {} }
     'applicant.applications.attachment.store': { paramsTuple: [ParamValue]; params: {'id': ParamValue} }
     'applicant.applications.index': { paramsTuple?: []; params?: {} }
@@ -44,8 +44,8 @@ export type ScannedRoutes = {
   }
   POST: {
     'auth.new_account.store': { paramsTuple?: []; params?: {} }
-    'auth.access_tokens.store': { paramsTuple?: []; params?: {} }
-    'profile.access_tokens.destroy': { paramsTuple?: []; params?: {} }
+    'auth.sessions.store': { paramsTuple?: []; params?: {} }
+    'profile.sessions.destroy': { paramsTuple?: []; params?: {} }
     'applicant.applications.attachment.store': { paramsTuple: [ParamValue]; params: {'id': ParamValue} }
     'applicant.applications.store': { paramsTuple?: []; params?: {} }
     'applicant.applications.submissions.store': { paramsTuple: [ParamValue]; params: {'application_id': ParamValue} }
