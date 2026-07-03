@@ -37,6 +37,8 @@ ENV HOST=0.0.0.0
 ENV PORT=3333
 
 COPY --from=build /app/apps/backend/build ./
+COPY pnpm-lock.yaml ./
+COPY apps/backend/package.json ./package.json
 
 RUN mkdir -p storage tmp
 
