@@ -20,6 +20,12 @@ tasks:
   - name: reviewer-queue-start
     description: Let a reviewer see queued work and start owned review.
     track: brief
+  - name: reviewer-application-detail
+    description: Let a reviewer inspect an application and its audit history before deciding.
+    track: brief
+  - name: reviewer-queue-status-filtering
+    description: Let a reviewer narrow the queue by application status.
+    track: brief
   - name: application-approval
     description: Let an assigned reviewer approve an application under review.
     track: brief

@@ -5,15 +5,15 @@ import {
   ApplicantApplicationPage,
   ApplicantWorkspacePage,
 } from "@/pages/applicant-workspace-page"
+import {
+  ReviewerApplicationPage,
+  ReviewerWorkspacePage,
+} from "@/pages/reviewer-workspace-page"
 import type { Role } from "@/routing/access-policy"
 import { ApplicantGuard, LandingRoute, ReviewerGuard } from "@/routing/access-policy"
 
 type AppProps = {
   currentRole?: Role
-}
-
-function ReviewerHome() {
-  return <section>Reviewer area</section>
 }
 
 export function App({ currentRole = null }: AppProps) {
@@ -30,7 +30,8 @@ export function App({ currentRole = null }: AppProps) {
         />
       </Route>
       <Route element={<ReviewerGuard currentRole={currentRole} />}>
-        <Route path="/reviewer" element={<ReviewerHome />} />
+        <Route path="/reviewer" element={<ReviewerWorkspacePage />} />
+        <Route path="/reviewer/applications/:id" element={<ReviewerApplicationPage />} />
       </Route>
     </Routes>
   )

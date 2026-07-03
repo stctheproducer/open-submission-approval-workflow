@@ -3,6 +3,7 @@ import Application from '#models/application'
 import type User from '#models/user'
 import { ApplicationStatus } from '#values/application_status'
 import ApplicationAuditEntry from '#models/application_audit_entry'
+import ApplicationStatusTransition from '#models/application_status_transition'
 import ApplicationTransitionConflictException from '#exceptions/application_transition_conflict_exception'
 
 export default class ApplicationWorkflowService {
@@ -27,6 +28,15 @@ export default class ApplicationWorkflowService {
       entry.comment = 'Reopened by applicant'
       await entry.save()
 
+      const transition = new ApplicationStatusTransition()
+      transition.useTransaction(trx)
+      transition.applicationId = locked.id
+      transition.actorUserId = applicant.id
+      transition.previousStatus = ApplicationStatus.CHANGES_REQUESTED
+      transition.nextStatus = ApplicationStatus.DRAFT
+      transition.comment = 'Reopened by applicant'
+      await transition.save()
+
       return locked
     })
 
@@ -34,7 +44,7 @@ export default class ApplicationWorkflowService {
       .where('id', updated.id)
       .preload('user')
       .preload('assignedReviewer')
-      .preload('auditLogEntries', (query) => {
+      .preload('statusTransitions', (query) => {
         query.preload('actor').orderBy('createdAt', 'asc')
       })
       .firstOrFail()
@@ -61,6 +71,15 @@ export default class ApplicationWorkflowService {
       entry.comment = comment
       await entry.save()
 
+      const transition = new ApplicationStatusTransition()
+      transition.useTransaction(trx)
+      transition.applicationId = locked.id
+      transition.actorUserId = reviewer.id
+      transition.previousStatus = ApplicationStatus.UNDER_REVIEW
+      transition.nextStatus = ApplicationStatus.CHANGES_REQUESTED
+      transition.comment = comment
+      await transition.save()
+
       return locked
     })
 
@@ -68,7 +87,7 @@ export default class ApplicationWorkflowService {
       .where('id', updated.id)
       .preload('user')
       .preload('assignedReviewer')
-      .preload('auditLogEntries', (query) => {
+      .preload('statusTransitions', (query) => {
         query.preload('actor').orderBy('createdAt', 'asc')
       })
       .firstOrFail()
@@ -95,6 +114,15 @@ export default class ApplicationWorkflowService {
       entry.comment = comment
       await entry.save()
 
+      const transition = new ApplicationStatusTransition()
+      transition.useTransaction(trx)
+      transition.applicationId = locked.id
+      transition.actorUserId = reviewer.id
+      transition.previousStatus = ApplicationStatus.UNDER_REVIEW
+      transition.nextStatus = ApplicationStatus.REJECTED
+      transition.comment = comment
+      await transition.save()
+
       return locked
     })
 
@@ -102,7 +130,7 @@ export default class ApplicationWorkflowService {
       .where('id', updated.id)
       .preload('user')
       .preload('assignedReviewer')
-      .preload('auditLogEntries', (query) => {
+      .preload('statusTransitions', (query) => {
         query.preload('actor').orderBy('createdAt', 'asc')
       })
       .firstOrFail()

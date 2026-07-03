@@ -1,6 +1,7 @@
 import db from '@adonisjs/lucid/services/db'
 import Application from '#models/application'
 import ApplicationAuditLogEntry from '#models/application_audit_log_entry'
+import ApplicationStatusTransition from '#models/application_status_transition'
 import type User from '#models/user'
 import { ApplicationStatus } from '#values/application_status'
 import ApplicationTransitionConflictException from '#exceptions/application_transition_conflict_exception'
@@ -26,13 +27,22 @@ export default class ApplicationReviewStartService {
       entry.nextStatus = ApplicationStatus.UNDER_REVIEW
       entry.comment = null
       await entry.save()
+
+      const transition = new ApplicationStatusTransition()
+      transition.useTransaction(trx)
+      transition.applicationId = locked.id
+      transition.actorUserId = reviewer.id
+      transition.previousStatus = ApplicationStatus.SUBMITTED
+      transition.nextStatus = ApplicationStatus.UNDER_REVIEW
+      transition.comment = null
+      await transition.save()
     })
 
     return Application.query()
       .where('id', applicationId)
       .preload('user')
       .preload('assignedReviewer')
-      .preload('auditLogEntries', (query) => {
+      .preload('statusTransitions', (query) => {
         query.preload('actor').orderBy('createdAt', 'asc')
       })
       .firstOrFail()

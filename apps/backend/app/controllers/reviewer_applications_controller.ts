@@ -21,6 +21,9 @@ export default class ReviewerApplicationsController {
       .paginate(page, perPage)
 
     applications.baseUrl(request.url())
+    if (reviewState) {
+      applications.queryString({ reviewState })
+    }
     return serialize(ApplicationTransformer.paginate(applications.all(), applications.getMeta()))
   }
 
@@ -33,7 +36,7 @@ export default class ReviewerApplicationsController {
       .where('id', params.id)
       .preload('user')
       .preload('assignedReviewer')
-      .preload('auditLogEntries', (query) => {
+      .preload('statusTransitions', (query) => {
         query.preload('actor').orderBy('createdAt', 'asc')
       })
       .firstOrFail()
