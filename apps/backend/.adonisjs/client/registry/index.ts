@@ -42,6 +42,12 @@ const routes = {
     tokens: [{"old":"/api/v1/applicant/application-option-sets","type":0,"val":"api","end":""},{"old":"/api/v1/applicant/application-option-sets","type":0,"val":"v1","end":""},{"old":"/api/v1/applicant/application-option-sets","type":0,"val":"applicant","end":""},{"old":"/api/v1/applicant/application-option-sets","type":0,"val":"application-option-sets","end":""}],
     types: placeholder as Registry['applicant.applicationOptionSets.index']['types'],
   },
+  'applicant.applications.attachment.store': {
+    methods: ["POST"],
+    pattern: '/api/v1/applicant/applications/:id/attachment',
+    tokens: [{"old":"/api/v1/applicant/applications/:id/attachment","type":0,"val":"api","end":""},{"old":"/api/v1/applicant/applications/:id/attachment","type":0,"val":"v1","end":""},{"old":"/api/v1/applicant/applications/:id/attachment","type":0,"val":"applicant","end":""},{"old":"/api/v1/applicant/applications/:id/attachment","type":0,"val":"applications","end":""},{"old":"/api/v1/applicant/applications/:id/attachment","type":1,"val":"id","end":""},{"old":"/api/v1/applicant/applications/:id/attachment","type":0,"val":"attachment","end":""}],
+    types: placeholder as Registry['applicant.applications.attachment.store']['types'],
+  },
   'applicant.applications.index': {
     methods: ["GET","HEAD"],
     pattern: '/api/v1/applicant/applications',

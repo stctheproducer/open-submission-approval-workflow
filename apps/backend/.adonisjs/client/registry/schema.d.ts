@@ -79,6 +79,18 @@ export interface Registry {
       errorResponse: ExtractErrorResponse<Awaited<ReturnType<import('#controllers/application_option_sets_controller').default['index']>>>
     }
   }
+  'applicant.applications.attachment.store': {
+    methods: ["POST"]
+    pattern: '/api/v1/applicant/applications/:id/attachment'
+    types: {
+      body: ExtractBody<InferInput<(typeof import('#validators/application_attachment').applicationAttachmentValidator)>>
+      paramsTuple: [ParamValue]
+      params: { id: ParamValue }
+      query: ExtractQuery<InferInput<(typeof import('#validators/application_attachment').applicationAttachmentValidator)>>
+      response: ExtractResponse<Awaited<ReturnType<import('#controllers/application_attachments_controller').default['store']>>>
+      errorResponse: ExtractErrorResponse<Awaited<ReturnType<import('#controllers/application_attachments_controller').default['store']>>> | { status: 422; response: { errors: SimpleError[] } }
+    }
+  }
   'applicant.applications.index': {
     methods: ["GET","HEAD"]
     pattern: '/api/v1/applicant/applications'
