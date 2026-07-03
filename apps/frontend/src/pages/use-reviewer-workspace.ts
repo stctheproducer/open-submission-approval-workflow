@@ -77,7 +77,7 @@ export function useReviewerWorkspace({
   })
 
   const startReviewMutation = useMutation({
-    ...apiQuery.reviewer.application_review_starts.store.mutationOptions(),
+    ...apiQuery.reviewer.applicationReviewStarts.store.mutationOptions(),
     onError: async (error) => {
       const details = await parseProblemDetails(error)
       setActionError(details.detail ?? "We couldn’t start review right now.")
@@ -96,7 +96,7 @@ export function useReviewerWorkspace({
   })
 
   const approvalMutation = useMutation({
-    ...apiQuery.reviewer.application_approvals.store.mutationOptions(),
+    ...apiQuery.reviewer.applicationApprovals.store.mutationOptions(),
     onError: async (error) => {
       const details = await parseProblemDetails(error)
       setActionError(details.detail ?? "We couldn’t approve this application.")

@@ -64,6 +64,8 @@ function toFormState(application?: ApplicationRecord): FormState {
 export function ApplicantWorkspacePage() {
   const navigate = useNavigate()
   const { data, isLoading, error } = useQuery(apiQuery.applicant.applications.index.queryOptions())
+  const applications = data?.data ?? []
+  const totalApplications = Number(data?.metadata.total ?? 0)
 
   const createDraft = useMutation({
     ...apiQuery.applicant.applications.store.mutationOptions(),
@@ -99,7 +101,7 @@ export function ApplicantWorkspacePage() {
             </div>
             <div className="flex flex-wrap items-center justify-between gap-3">
               <p className="text-sm text-muted-foreground">
-                {data.metadata.total} application{data.metadata.total === 1 ? "" : "s"} on this
+                {totalApplications} application{totalApplications === 1 ? "" : "s"} on this
                 page
               </p>
               <Button
@@ -115,7 +117,7 @@ export function ApplicantWorkspacePage() {
           </div>
 
           <div className="grid gap-4">
-            {data.data.map((application) => (
+            {applications.map((application) => (
               <Link
                 key={application.id}
                 to={`/applicant/applications/${application.id}`}
@@ -249,11 +251,11 @@ function ApplicantApplicationWorkspace({
   })
 
   const reopenDraft = useMutation({
-    ...apiQuery.applicant.application_draft_reopenings.store.mutationOptions(),
+    ...apiQuery.applicant.applicationDraftReopenings.store.mutationOptions(),
     onSuccess: (response) => {
-      queryClient.setQueryData(
+      queryClient.setQueryData<{ data?: ApplicationRecord }>(
         apiQuery.applicant.applications.show.queryKey({ params: { id: applicationId } }),
-        (current: { data?: ApplicationRecord } | undefined) => {
+        (current) => {
           if (!current?.data) {
             return current
           }
