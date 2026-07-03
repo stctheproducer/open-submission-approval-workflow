@@ -43,6 +43,7 @@ import {
   humanizeStatus,
   type WorkflowApplication,
 } from "@/lib/review-workflow"
+import { useApplicationPageMeta } from "@/routing/page-meta"
 
 const APPLICATION_CATEGORY_OPTIONS = [
   "Operations",
@@ -681,6 +682,11 @@ function ApplicantApplicationWorkspace({
   applicationId: number
   mode: "view" | "edit"
 }) {
+  useApplicationPageMeta(
+    application,
+    mode === "edit" ? "Edit draft application" : "Application detail",
+  )
+
   const location = useLocation()
   const navigate = useNavigate()
   const queryClient = useQueryClient()

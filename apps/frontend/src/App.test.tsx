@@ -6,6 +6,7 @@ import App from "./App"
 import { api } from "@/lib/api"
 import { AppProviders } from "@/providers"
 import { ThemeProvider } from "@/components/theme-provider"
+import { DocumentMeta, PageMetaProvider } from "@/routing/page-meta"
 
 const sonnerMock = vi.hoisted(() => ({
   toast: {
@@ -403,7 +404,10 @@ function renderAt(path: string) {
     <AppProviders>
       <ThemeProvider>
         <MemoryRouter initialEntries={[path]}>
-          <App />
+          <PageMetaProvider>
+            <DocumentMeta />
+            <App />
+          </PageMetaProvider>
         </MemoryRouter>
       </ThemeProvider>
     </AppProviders>,
@@ -415,7 +419,10 @@ function renderWithRole(path: string, currentRole: "applicant" | "reviewer") {
     <AppProviders>
       <ThemeProvider>
         <MemoryRouter initialEntries={[path]}>
-          <App currentRole={currentRole} />
+          <PageMetaProvider>
+            <DocumentMeta />
+            <App currentRole={currentRole} />
+          </PageMetaProvider>
         </MemoryRouter>
       </ThemeProvider>
     </AppProviders>,

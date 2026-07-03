@@ -39,6 +39,7 @@ import {
 } from "@/lib/review-workflow"
 
 import { useReviewerWorkspace } from "./use-reviewer-workspace"
+import { useApplicationPageMeta } from "@/routing/page-meta"
 
 function ReviewerAppShell({
   eyebrow,
@@ -552,6 +553,7 @@ export function ReviewerApplicationPage({
     includeQueue: false,
     includeApplication: true,
   })
+  useApplicationPageMeta(application, "Review application")
   const [decisionComment, setDecisionComment] = useState("")
   const [decisionCommentError, setDecisionCommentError] = useState<
     string | null
