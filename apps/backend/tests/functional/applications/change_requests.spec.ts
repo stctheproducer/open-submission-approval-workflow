@@ -21,9 +21,11 @@ test.group('Application change requests', (group) => {
       status: ApplicationStatus.UNDER_REVIEW,
     }).create()
 
-    const response = await client.visit('reviewer.application_change_requests.store', {
-      id: application.id,
-    }).json({ comment: 'Please update the budget section' })
+    const response = await client
+      .visit('reviewer.application_change_requests.store', {
+        id: application.id,
+      })
+      .json({ comment: 'Please update the budget section' })
 
     response.assertStatus(401)
   })
@@ -67,40 +69,40 @@ test.group('Application change requests', (group) => {
     })
   })
 
-  test(
-    'rejects invalid comment payloads with field-level validation errors (422)',
-    async ({ client, db }) => {
-      const reviewer = await createReviewer()
-      const applicant = await UserFactory.create()
-      const application = await ApplicationFactory.merge({
-        userId: applicant.id,
-        status: ApplicationStatus.UNDER_REVIEW,
-        assignedReviewerId: reviewer.id,
-      }).create()
+  test('rejects invalid comment payloads with field-level validation errors (422)', async ({
+    client,
+    db,
+  }) => {
+    const reviewer = await createReviewer()
+    const applicant = await UserFactory.create()
+    const application = await ApplicationFactory.merge({
+      userId: applicant.id,
+      status: ApplicationStatus.UNDER_REVIEW,
+      assignedReviewerId: reviewer.id,
+    }).create()
 
-      const rows = [
-        { body: {}, label: 'missing' },
-        { body: { comment: '   ' }, label: 'blank' },
-        { body: { comment: 'x'.repeat(2001) }, label: 'too-long' },
-      ]
+    const rows = [
+      { body: {}, label: 'missing' },
+      { body: { comment: '   ' }, label: 'blank' },
+      { body: { comment: 'x'.repeat(2001) }, label: 'too-long' },
+    ]
 
-      for (const row of rows) {
-        const response = await client
-          .visit('reviewer.application_change_requests.store', { id: application.id })
-          .withGuard('web')
-          .loginAs(reviewer)
-          .json(row.body as any)
+    for (const row of rows) {
+      const response = await client
+        .visit('reviewer.application_change_requests.store', { id: application.id })
+        .withGuard('web')
+        .loginAs(reviewer)
+        .json(row.body as any)
 
-        response.assertStatus(422)
-        const body = response.body() as any
-        if (!Array.isArray(body.errors) || body.errors.length === 0) {
-          throw new Error(`Expected validation errors for ${row.label}, got ${JSON.stringify(body)}`)
-        }
+      response.assertStatus(422)
+      const body = response.body() as any
+      if (!Array.isArray(body.errors) || body.errors.length === 0) {
+        throw new Error(`Expected validation errors for ${row.label}, got ${JSON.stringify(body)}`)
       }
-
-      await db.assertMissing('application_audit_entries', { application_id: application.id })
     }
-  )
+
+    await db.assertMissing('application_audit_entries', { application_id: application.id })
+  })
 
   test('requests change on an eligible under-review application and returns the updated summary (200)', async ({
     client,

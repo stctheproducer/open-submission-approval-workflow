@@ -85,12 +85,12 @@ test.group('Session login seed', (group) => {
     }
   })
 
-  test('seeds one applicant and one reviewer for local sign-in testing', async ({ db }) => {
-    await db.assertHas('users', {
+  test('seeds one applicant and one reviewer for local sign-in testing', async ({ db: testDb }) => {
+    await testDb.assertHas('users', {
       email: SESSION_LOGIN_SEED_USERS.applicant.email,
       role: SESSION_LOGIN_SEED_USERS.applicant.role,
     })
-    await db.assertHas('users', {
+    await testDb.assertHas('users', {
       email: SESSION_LOGIN_SEED_USERS.reviewer.email,
       role: SESSION_LOGIN_SEED_USERS.reviewer.role,
     })

@@ -23,33 +23,29 @@ export default class Application extends ApplicationSchema {
     return this.status === 'draft'
   }
 
-  static reviewQueue = scope(
-    (query: any, reviewerId: number, reviewState?: 'ready' | 'owned') => {
-      query.where((builder: any) => {
-        if (reviewState === 'ready') {
-          builder
-            .where('status', ApplicationStatus.SUBMITTED)
-            .whereNull('assignedReviewerId')
-        } else if (reviewState === 'owned') {
-          builder
-            .where('status', ApplicationStatus.UNDER_REVIEW)
-            .where('assignedReviewerId', reviewerId)
-        } else {
-          builder.where((nested: any) => {
-            nested
-              .where((readyQuery: any) => {
-                readyQuery
-                  .where('status', ApplicationStatus.SUBMITTED)
-                  .whereNull('assignedReviewerId')
-              })
-              .orWhere((ownedQuery: any) => {
-                ownedQuery
-                  .where('status', ApplicationStatus.UNDER_REVIEW)
-                  .where('assignedReviewerId', reviewerId)
-              })
-          })
-        }
-      })
-    }
-  )
+  static reviewQueue = scope((query: any, reviewerId: number, reviewState?: 'ready' | 'owned') => {
+    query.where((builder: any) => {
+      if (reviewState === 'ready') {
+        builder.where('status', ApplicationStatus.SUBMITTED).whereNull('assignedReviewerId')
+      } else if (reviewState === 'owned') {
+        builder
+          .where('status', ApplicationStatus.UNDER_REVIEW)
+          .where('assignedReviewerId', reviewerId)
+      } else {
+        builder.where((nested: any) => {
+          nested
+            .where((readyQuery: any) => {
+              readyQuery
+                .where('status', ApplicationStatus.SUBMITTED)
+                .whereNull('assignedReviewerId')
+            })
+            .orWhere((ownedQuery: any) => {
+              ownedQuery
+                .where('status', ApplicationStatus.UNDER_REVIEW)
+                .where('assignedReviewerId', reviewerId)
+            })
+        })
+      }
+    })
+  })
 }

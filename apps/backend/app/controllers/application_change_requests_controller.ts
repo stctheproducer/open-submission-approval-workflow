@@ -22,6 +22,8 @@ export default class ApplicationChangeRequestsController {
     const updated = await workflowService.requestChange(application, user, payload.comment)
 
     response.status(200)
-    return serialize.withoutWrapping({ application: { id: updated.id, status: updated.status, updatedAt: updated.updatedAt } })
+    return serialize.withoutWrapping({
+      application: { id: updated.id, status: updated.status, updatedAt: updated.updatedAt },
+    })
   }
 }

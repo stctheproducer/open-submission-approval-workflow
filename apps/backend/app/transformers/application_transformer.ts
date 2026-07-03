@@ -6,10 +6,7 @@ import { ApplicationStatus } from '#values/application_status'
 
 export default class ApplicationTransformer extends BaseTransformer<Application> {
   toObject() {
-    const transitions =
-      this.resource.statusTransitions && this.resource.statusTransitions.length > 0
-        ? this.resource.statusTransitions
-        : this.resource.auditLogEntries ?? []
+    const transitions = this.resource.statusTransitions ?? []
     return {
       id: this.resource.id,
       title: this.resource.title ?? this.resource.organizationName,
@@ -33,9 +30,9 @@ export default class ApplicationTransformer extends BaseTransformer<Application>
         ? this.resource.assignedReviewerId === this.resource.assignedReviewer?.id
           ? 'owned'
           : 'other'
-          : this.resource.status === ApplicationStatus.SUBMITTED
-            ? 'ready'
-            : 'other',
+        : this.resource.status === ApplicationStatus.SUBMITTED
+          ? 'ready'
+          : 'other',
       statusTransitions: ApplicationStatusTransitionTransformer.transform(transitions),
       history: ApplicationStatusTransitionTransformer.transform(transitions),
     }

@@ -20,7 +20,10 @@ export default class HttpExceptionHandler extends ExceptionHandler {
 
     if (status && [400, 401, 403, 404, 409, 422].includes(status)) {
       const message =
-        typeof error === 'object' && error && 'message' in error && typeof error.message === 'string'
+        typeof error === 'object' &&
+        error &&
+        'message' in error &&
+        typeof error.message === 'string'
           ? error.message
           : 'Request failed'
 

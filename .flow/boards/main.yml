@@ -35,3 +35,15 @@ tasks:
   - name: workflow-conflicts
     description: Make illegal workflow transitions return consistent conflict behavior.
     track: brief
+  - name: application-read-history
+    description: Let an applicant review any owned application and its status-transition history.
+    track: brief
+  - name: application-option-sets
+    description: Provide backend-owned category options for applicant draft flows.
+    track: brief
+  - name: draft-application-attachment
+    description: Let an applicant attach and replace one supported file on a draft application.
+    track: brief
+  - name: application-resubmission-history
+    description: Record distinct revision-round submission history on reopened applications.
+    track: brief

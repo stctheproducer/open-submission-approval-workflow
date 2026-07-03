@@ -1,6 +1,6 @@
 import db from '@adonisjs/lucid/services/db'
 import Application from '#models/application'
-import User from '#models/user'
+import type User from '#models/user'
 import { ApplicationStatus } from '#values/application_status'
 import ApplicationAuditEntry from '#models/application_audit_entry'
 import ApplicationTransitionConflictException from '#exceptions/application_transition_conflict_exception'

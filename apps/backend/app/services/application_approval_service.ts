@@ -10,25 +10,25 @@ import ApplicationStatusTransition from '#models/application_status_transition'
 export default class ApplicationApprovalService {
   async approve(applicationId: number, reviewer: User): Promise<Application> {
     const application = await db.transaction(async (trx) => {
-      const application = await Application.findOrFail(applicationId, { client: trx })
-      application.useTransaction(trx)
+      const approvedApplication = await Application.findOrFail(applicationId, { client: trx })
+      approvedApplication.useTransaction(trx)
 
-      if (application.status !== ApplicationStatus.UNDER_REVIEW) {
+      if (approvedApplication.status !== ApplicationStatus.UNDER_REVIEW) {
         throw new ApplicationTransitionConflictException()
       }
 
-      application.status = ApplicationStatus.APPROVED
-      await application.save()
+      approvedApplication.status = ApplicationStatus.APPROVED
+      await approvedApplication.save()
 
       const transition = new ApplicationStatusTransition()
-      transition.applicationId = application.id
+      transition.applicationId = approvedApplication.id
       transition.actorUserId = reviewer.id
       transition.previousStatus = ApplicationStatus.UNDER_REVIEW
       transition.nextStatus = ApplicationStatus.APPROVED
       transition.useTransaction(trx)
       await transition.save()
 
-      return application
+      return approvedApplication
     })
 
     await application.load((loader) => {

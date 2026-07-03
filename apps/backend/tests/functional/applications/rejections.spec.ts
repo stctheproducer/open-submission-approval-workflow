@@ -154,10 +154,7 @@ test.group('Application rejections', (group) => {
     await db.assertMissing('application_audit_entries', { application_id: application.id })
   })
 
-  test('rejects a non-eligible application with a conflict error (409)', async ({
-    client,
-    db,
-  }) => {
+  test('rejects a non-eligible application with a conflict error (409)', async ({ client, db }) => {
     const reviewer = await createReviewer()
     const applicant = await UserFactory.create()
     const application = await ApplicationFactory.merge({

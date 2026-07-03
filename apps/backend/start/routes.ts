@@ -63,10 +63,7 @@ router
           ])
           .where('applicationId', router.matchers.number())
         router
-          .post('applications/:id/change-request', [
-            controllers.ApplicationChangeRequests,
-            'store',
-          ])
+          .post('applications/:id/change-request', [controllers.ApplicationChangeRequests, 'store'])
           .where('id', router.matchers.number())
         router
           .post('applications/:application_id/rejections', [

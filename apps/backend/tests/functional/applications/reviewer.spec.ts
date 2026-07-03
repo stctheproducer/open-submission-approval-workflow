@@ -82,9 +82,7 @@ test.group('Reviewer applications', (group) => {
     }
   })
 
-  test('shows an application detail with the reviewer-detail variant (200)', async ({
-    client,
-  }) => {
+  test('shows an application detail with the reviewer-detail variant (200)', async ({ client }) => {
     const reviewer = await createReviewer()
     const applicant = await UserFactory.create()
     const application = await ApplicationFactory.merge({
@@ -152,10 +150,9 @@ test.group('Reviewer applications', (group) => {
       title: 'Submit',
     }).create()
 
-    const response = await (client.visit as any)(
-      'reviewer.application_review_starts.store',
-      { id: application.id }
-    )
+    const response = await (client.visit as any)('reviewer.application_review_starts.store', {
+      id: application.id,
+    })
       .withGuard('web')
       .loginAs(applicant)
 
@@ -177,10 +174,9 @@ test.group('Reviewer applications', (group) => {
       amount: '2500.00',
     }).create()
 
-    const response = await (client.visit as any)(
-      'reviewer.application_review_starts.store',
-      { id: application.id }
-    )
+    const response = await (client.visit as any)('reviewer.application_review_starts.store', {
+      id: application.id,
+    })
       .withGuard('web')
       .loginAs(reviewer)
 
@@ -219,10 +215,9 @@ test.group('Reviewer applications', (group) => {
       title: 'Owned',
     }).create()
 
-    const response = await (client.visit as any)(
-      'reviewer.application_review_starts.store',
-      { id: application.id }
-    )
+    const response = await (client.visit as any)('reviewer.application_review_starts.store', {
+      id: application.id,
+    })
       .withGuard('web')
       .loginAs(reviewer)
 

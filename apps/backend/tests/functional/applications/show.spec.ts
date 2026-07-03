@@ -2,7 +2,7 @@ import { test } from '@japa/runner'
 import testUtils from '@adonisjs/core/services/test_utils'
 import { UserFactory } from '#database/factories/user_factory'
 import { ApplicationFactory } from '#database/factories/application_factory'
-import { ApplicationAuditLogEntryFactory } from '#database/factories/application_audit_log_entry_factory'
+import { ApplicationStatusTransitionFactory } from '#database/factories/application_status_transition_factory'
 import { DateTime } from 'luxon'
 import { ApplicationStatus } from '#values/application_status'
 
@@ -40,6 +40,11 @@ test.group('Applications show', (group) => {
       },
     })
 
+    const body = response.body() as any
+    if (!Array.isArray(body.data.history) || body.data.history.length !== 0) {
+      throw new Error(`Expected no history entries, got ${JSON.stringify(body.data.history)}`)
+    }
+
     await db.assertHas('applications', { id: application.id, user_id: applicant.id })
   })
 
@@ -52,14 +57,14 @@ test.group('Applications show', (group) => {
       status: ApplicationStatus.SUBMITTED,
     }).create()
 
-    await ApplicationAuditLogEntryFactory.merge({
+    await ApplicationStatusTransitionFactory.merge({
       applicationId: application.id,
       actorUserId: applicant.id,
       previousStatus: ApplicationStatus.DRAFT,
       nextStatus: ApplicationStatus.SUBMITTED,
       createdAt: DateTime.now().minus({ minutes: 2 }),
     }).create()
-    await ApplicationAuditLogEntryFactory.merge({
+    await ApplicationStatusTransitionFactory.merge({
       applicationId: application.id,
       actorUserId: applicant.id,
       previousStatus: ApplicationStatus.SUBMITTED,
