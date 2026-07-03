@@ -1,6 +1,12 @@
 import { type ReactNode, useState } from "react"
 import { Link, useParams } from "react-router"
-import { ArrowLeft, CheckCircle2, Play, UserRound } from "lucide-react"
+import {
+  ArrowLeft,
+  CheckCircle2,
+  Inbox,
+  Play,
+  UserRound,
+} from "lucide-react"
 
 import { ReviewStateFilter } from "@/components/review-state-filter"
 import { CardTotalBadge } from "@/components/card-total-badge"
@@ -252,6 +258,39 @@ function QueueItemCard({
   )
 }
 
+function EmptyQueueState() {
+  return (
+    <div className="flex flex-col gap-6 px-1 py-2 sm:px-2">
+      <div className="flex flex-wrap items-start justify-between gap-4">
+        <div className="flex max-w-2xl flex-col gap-3">
+          <p className="text-sm font-semibold tracking-[0.24em] text-primary uppercase">
+            No items in queue
+          </p>
+          <h3 className="text-2xl font-semibold tracking-tight text-foreground">
+            Nothing is ready for review yet.
+          </h3>
+        </div>
+      </div>
+
+      <div className="grid gap-4 rounded-[1.75rem] border border-border/70 bg-background/60 p-6 shadow-none sm:grid-cols-[auto,1fr] sm:items-center">
+        <div className="flex h-16 w-16 items-center justify-center rounded-full bg-primary/10 text-primary">
+          <Inbox className="h-8 w-8" aria-hidden="true" />
+        </div>
+        <div className="space-y-2">
+          <p className="text-xs font-semibold tracking-[0.24em] text-primary uppercase">
+            Waiting for submissions
+          </p>
+          <p className="text-sm leading-6 text-muted-foreground">
+            New applications will appear here once applicants submit them. Use
+            the queue controls above to filter between ready and owned work
+            when the list fills up.
+          </p>
+        </div>
+      </div>
+    </div>
+  )
+}
+
 function SidebarNoteCard({
   title,
   gradient = false,
@@ -469,16 +508,25 @@ export function ReviewerWorkspacePage({
             />
           </div>
 
-          <div className="grid gap-4">
-            {reviewQueue.data.map((application) => (
-              <QueueItemCard
-                key={application.id}
-                application={application}
-                onStartReview={startReview}
-                isStartingReview={isStartingReview}
-              />
-            ))}
-          </div>
+          {reviewQueue.data.length > 0 ? (
+            <div className="grid gap-4">
+              {reviewQueue.data.map((application) => (
+                <QueueItemCard
+                  key={application.id}
+                  application={application}
+                  onStartReview={startReview}
+                  isStartingReview={isStartingReview}
+                />
+              ))}
+            </div>
+          ) : (
+            <EmptyQueueState
+              onReviewQueueReset={() => {
+                setReviewFilter(null)
+                setQueuePage(1)
+              }}
+            />
+          )}
         </div>
 
         <aside className="flex flex-col gap-4 xl:pt-16">
