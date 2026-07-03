@@ -4,7 +4,7 @@ import { UserFactory } from '#database/factories/user_factory'
 import User from '#models/user'
 import { ApplicationFactory } from '#database/factories/application_factory'
 import { ApplicationStatus } from '#values/application_status'
-import { ApplicationAuditEntryFactory } from '#database/factories/application_audit_entry_factory'
+import { ApplicationStatusTransitionFactory } from '#database/factories/application_status_transition_factory'
 import { assertProblemDetails } from './problem_details.js'
 
 async function createApplicant() {
@@ -26,11 +26,11 @@ test.group('Application draft reopenings', (group) => {
       userId: applicant.id,
       status: ApplicationStatus.CHANGES_REQUESTED,
     }).create()
-    await ApplicationAuditEntryFactory.merge({
+    await ApplicationStatusTransitionFactory.merge({
       applicationId: application.id,
-      actorId: applicant.id,
-      fromStatus: ApplicationStatus.UNDER_REVIEW,
-      toStatus: ApplicationStatus.CHANGES_REQUESTED,
+      actorUserId: applicant.id,
+      previousStatus: ApplicationStatus.UNDER_REVIEW,
+      nextStatus: ApplicationStatus.CHANGES_REQUESTED,
       comment: 'Please update the budget section',
     }).create()
 
@@ -50,11 +50,11 @@ test.group('Application draft reopenings', (group) => {
       id: application.id,
       status: ApplicationStatus.DRAFT,
     })
-    await db.assertHas('application_audit_entries', {
+    await db.assertHas('application_status_transitions', {
       application_id: application.id,
-      actor_id: applicant.id,
-      from_status: ApplicationStatus.CHANGES_REQUESTED,
-      to_status: ApplicationStatus.DRAFT,
+      actor_user_id: applicant.id,
+      previous_status: ApplicationStatus.CHANGES_REQUESTED,
+      next_status: ApplicationStatus.DRAFT,
     })
   })
 

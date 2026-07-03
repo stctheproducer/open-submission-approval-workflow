@@ -8,7 +8,7 @@ export const createApplicationValidator = vine.create({
   title: vine.string().trim().minLength(1).maxLength(255),
   category: vine.enum(APPLICATION_CATEGORY_VALUES),
   description: vine.string().trim().minLength(1),
-  amount: vine.number().decimal(2).positive(),
+  amount: vine.number().decimal([0, 2]).positive(),
 })
 
 /**
@@ -18,5 +18,5 @@ export const updateApplicationValidator = vine.create({
   title: vine.string().trim().minLength(1).maxLength(255).optional(),
   category: vine.enum(APPLICATION_CATEGORY_VALUES).optional(),
   description: vine.string().trim().minLength(1).optional(),
-  amount: vine.number().decimal(2).positive().optional(),
+  amount: vine.number().decimal([0, 2]).positive().optional(),
 })

@@ -95,6 +95,9 @@ test.group('Applications show', (group) => {
     if (body.data.history[0].nextStatus !== ApplicationStatus.SUBMITTED) {
       throw new Error(`Expected oldest history first, got ${JSON.stringify(body.data.history)}`)
     }
+    if (body.data.history[0].actor?.id !== applicant.id) {
+      throw new Error(`Expected history actor to be preloaded, got ${JSON.stringify(body.data.history)}`)
+    }
   })
 
   test('returns 404 for a foreign or non-existent application', async ({ client }) => {

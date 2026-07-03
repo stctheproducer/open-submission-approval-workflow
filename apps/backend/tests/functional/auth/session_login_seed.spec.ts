@@ -14,10 +14,7 @@ test.group('Session login seed', (group) => {
   })
 
   test('signs in a seeded {role} through the shared session login and sets a session cookie')
-    .with([
-      SESSION_LOGIN_SEED_USERS.applicant,
-      SESSION_LOGIN_SEED_USERS.reviewer,
-    ])
+    .with([SESSION_LOGIN_SEED_USERS.applicant, SESSION_LOGIN_SEED_USERS.reviewer])
     .run(async ({ client }, user) => {
       const loginResponse = await client.visit('auth.sessions.store').json({
         email: user.email,

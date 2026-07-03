@@ -182,6 +182,9 @@ test.group('Reviewer applications', (group) => {
     ) {
       throw new Error(`Expected reviewer detail payload, got ${JSON.stringify(body.data)}`)
     }
+    if (body.data.history[0].actor?.id !== reviewer.id) {
+      throw new Error(`Expected reviewer history actor to be preloaded, got ${JSON.stringify(body.data.history)}`)
+    }
   })
 
   test('rejects non-reviewer users from viewing an application (403)', async ({ client }) => {
@@ -283,7 +286,7 @@ test.group('Reviewer applications', (group) => {
       status: ApplicationStatus.UNDER_REVIEW,
       assigned_reviewer_id: reviewer.id,
     })
-    await db.assertHas('application_audit_log_entries', {
+    await db.assertHas('application_status_transitions', {
       application_id: application.id,
       actor_user_id: reviewer.id,
       previous_status: ApplicationStatus.SUBMITTED,
@@ -317,6 +320,129 @@ test.group('Reviewer applications', (group) => {
       id: application.id,
       status: ApplicationStatus.UNDER_REVIEW,
       assigned_reviewer_id: otherReviewer.id,
+    })
+  })
+
+  test('lists a resubmitted application in the reviewer ready queue after change request, reopen, and resubmit (200)', async ({
+    client,
+  }) => {
+    const reviewer = await createReviewer()
+    const applicant = await UserFactory.create()
+    const application = await ApplicationFactory.merge({
+      userId: applicant.id,
+      status: ApplicationStatus.DRAFT,
+      title: 'Resubmit flow',
+    }).create()
+
+    await client
+      .visit('applicant.applications.submissions.store', { application_id: application.id })
+      .withGuard('web')
+      .loginAs(applicant)
+      .json({})
+
+    await (client.visit as any)('reviewer.application_review_starts.store', {
+      id: application.id,
+    })
+      .withGuard('web')
+      .loginAs(reviewer)
+
+    await client
+      .visit('reviewer.application_change_requests.store', { id: application.id })
+      .withGuard('web')
+      .loginAs(reviewer)
+      .json({ comment: 'Please update the budget section' })
+
+    await client
+      .visit('applicant.application_draft_reopenings.store', { id: application.id })
+      .withGuard('web')
+      .loginAs(applicant)
+
+    await client
+      .visit('applicant.applications.submissions.store', { application_id: application.id })
+      .withGuard('web')
+      .loginAs(applicant)
+      .json({})
+
+    const response = await client
+      .visit('reviewer.applications.index')
+      .qs({ reviewState: 'ready' })
+      .withGuard('web')
+      .loginAs(reviewer)
+
+    response.assertStatus(200)
+    const body = response.body() as any
+    const item = body.data.find((row: { id: number }) => row.id === application.id)
+    if (!item) {
+      throw new Error(
+        `Expected resubmitted application in ready queue, got ${JSON.stringify(body.data.map((row: { id: number }) => row.id))}`,
+      )
+    }
+    if (item.status !== ApplicationStatus.SUBMITTED || item.assignedReviewer !== null) {
+      throw new Error(
+        `Expected resubmitted application to be unassigned ready work, got ${JSON.stringify(item)}`,
+      )
+    }
+  })
+
+  test('starts review on a resubmitted application from the ready queue (200)', async ({
+    client,
+    db,
+  }) => {
+    const reviewer = await createReviewer()
+    const applicant = await UserFactory.create()
+    const application = await ApplicationFactory.merge({
+      userId: applicant.id,
+      status: ApplicationStatus.DRAFT,
+      title: 'Resubmit review start',
+    }).create()
+
+    await client
+      .visit('applicant.applications.submissions.store', { application_id: application.id })
+      .withGuard('web')
+      .loginAs(applicant)
+      .json({})
+
+    await (client.visit as any)('reviewer.application_review_starts.store', {
+      id: application.id,
+    })
+      .withGuard('web')
+      .loginAs(reviewer)
+
+    await client
+      .visit('reviewer.application_change_requests.store', { id: application.id })
+      .withGuard('web')
+      .loginAs(reviewer)
+      .json({ comment: 'Please update the budget section' })
+
+    await client
+      .visit('applicant.application_draft_reopenings.store', { id: application.id })
+      .withGuard('web')
+      .loginAs(applicant)
+
+    await client
+      .visit('applicant.applications.submissions.store', { application_id: application.id })
+      .withGuard('web')
+      .loginAs(applicant)
+      .json({})
+
+    const response = await (client.visit as any)('reviewer.application_review_starts.store', {
+      id: application.id,
+    })
+      .withGuard('web')
+      .loginAs(reviewer)
+
+    response.assertStatus(200)
+    const body = response.body() as any
+    if (
+      body.data.status !== ApplicationStatus.UNDER_REVIEW ||
+      body.data.assignedReviewer?.id !== reviewer.id
+    ) {
+      throw new Error(`Expected owned under-review detail, got ${JSON.stringify(body.data)}`)
+    }
+    await db.assertHas('applications', {
+      id: application.id,
+      status: ApplicationStatus.UNDER_REVIEW,
+      assigned_reviewer_id: reviewer.id,
     })
   })
 

@@ -4,7 +4,6 @@ import { UserFactory } from '#database/factories/user_factory'
 import User from '#models/user'
 import { ApplicationFactory } from '#database/factories/application_factory'
 import { ApplicationStatus } from '#values/application_status'
-import { ApplicationAuditEntryFactory } from '#database/factories/application_audit_entry_factory'
 import { ApplicationStatusTransitionFactory } from '#database/factories/application_status_transition_factory'
 import { assertProblemDetails } from './problem_details.js'
 
@@ -61,11 +60,11 @@ test.group('Workflow conflicts', (group) => {
       status: ApplicationStatus.DRAFT,
     }).create()
 
-    await ApplicationAuditEntryFactory.merge({
+    await ApplicationStatusTransitionFactory.merge({
       applicationId: reviewStart.id,
-      actorId: reviewer.id,
-      fromStatus: ApplicationStatus.SUBMITTED,
-      toStatus: ApplicationStatus.UNDER_REVIEW,
+      actorUserId: reviewer.id,
+      previousStatus: ApplicationStatus.SUBMITTED,
+      nextStatus: ApplicationStatus.UNDER_REVIEW,
       comment: 'Started review',
     }).create()
     await ApplicationStatusTransitionFactory.merge({
@@ -74,25 +73,25 @@ test.group('Workflow conflicts', (group) => {
       previousStatus: ApplicationStatus.UNDER_REVIEW,
       nextStatus: ApplicationStatus.APPROVED,
     }).create()
-    await ApplicationAuditEntryFactory.merge({
+    await ApplicationStatusTransitionFactory.merge({
       applicationId: rejection.id,
-      actorId: reviewer.id,
-      fromStatus: ApplicationStatus.UNDER_REVIEW,
-      toStatus: ApplicationStatus.REJECTED,
+      actorUserId: reviewer.id,
+      previousStatus: ApplicationStatus.UNDER_REVIEW,
+      nextStatus: ApplicationStatus.REJECTED,
       comment: 'Rejected already',
     }).create()
-    await ApplicationAuditEntryFactory.merge({
+    await ApplicationStatusTransitionFactory.merge({
       applicationId: changeRequest.id,
-      actorId: reviewer.id,
-      fromStatus: ApplicationStatus.UNDER_REVIEW,
-      toStatus: ApplicationStatus.CHANGES_REQUESTED,
+      actorUserId: reviewer.id,
+      previousStatus: ApplicationStatus.UNDER_REVIEW,
+      nextStatus: ApplicationStatus.CHANGES_REQUESTED,
       comment: 'Change already',
     }).create()
-    await ApplicationAuditEntryFactory.merge({
+    await ApplicationStatusTransitionFactory.merge({
       applicationId: reopen.id,
-      actorId: applicant.id,
-      fromStatus: ApplicationStatus.CHANGES_REQUESTED,
-      toStatus: ApplicationStatus.DRAFT,
+      actorUserId: applicant.id,
+      previousStatus: ApplicationStatus.CHANGES_REQUESTED,
+      nextStatus: ApplicationStatus.DRAFT,
       comment: 'Reopened already',
     }).create()
 
@@ -102,9 +101,9 @@ test.group('Workflow conflicts', (group) => {
         actor: applicant,
         body: {},
         status: ApplicationStatus.SUBMITTED,
-        table: 'application_audit_log_entries',
+        table: 'application_status_transitions',
         assertNoAudit: async () => {
-          await db.assertMissing('application_audit_log_entries', {
+          await db.assertMissing('application_status_transitions', {
             application_id: submission.id,
           })
         },
@@ -114,12 +113,12 @@ test.group('Workflow conflicts', (group) => {
         actor: reviewer,
         body: {},
         status: ApplicationStatus.UNDER_REVIEW,
-        table: 'application_audit_log_entries',
+        table: 'application_status_transitions',
         assertNoAudit: async () => {
-          await db.assertHas('application_audit_log_entries', {
+          await db.assertHas('application_status_transitions', {
             application_id: reviewStart.id,
           })
-          await db.assertMissing('application_audit_log_entries', {
+          await db.assertMissing('application_status_transitions', {
             application_id: reviewStart.id,
             comment: null,
           })
@@ -143,21 +142,21 @@ test.group('Workflow conflicts', (group) => {
         actor: reviewer,
         body: { comment: 'Does not meet requirements' },
         status: ApplicationStatus.REJECTED,
-        table: 'application_audit_entries',
+        table: 'application_status_transitions',
       },
       {
         path: `/api/v1/reviewer/applications/${changeRequest.id}/change-request`,
         actor: reviewer,
         body: { comment: 'Please update the budget section' },
         status: ApplicationStatus.CHANGES_REQUESTED,
-        table: 'application_audit_entries',
+        table: 'application_status_transitions',
       },
       {
         path: `/api/v1/applicant/applications/${reopen.id}/reopen`,
         actor: applicant,
         body: {},
         status: ApplicationStatus.DRAFT,
-        table: 'application_audit_entries',
+        table: 'application_status_transitions',
       },
     ] as const
 
