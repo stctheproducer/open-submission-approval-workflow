@@ -109,7 +109,12 @@ export default defineConfig({
   | the production build.
   |
   */
-  metaFiles: [],
+  metaFiles: [
+    {
+      pattern: 'scripts/**/*.{js,mjs,sh}',
+      reloadServer: false,
+    },
+  ],
 
   hooks: {
     init: [
