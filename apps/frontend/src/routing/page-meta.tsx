@@ -20,14 +20,13 @@ type PageMetaOverrideContextValue = {
   setOverride: (meta: PageMeta | null) => void
 }
 
-const PageMetaOverrideContext = createContext<PageMetaOverrideContextValue | null>(
-  null,
-)
+const PageMetaOverrideContext =
+  createContext<PageMetaOverrideContextValue | null>(null)
 
 function upsertMetaTag(
   attribute: "name" | "property",
   key: string,
-  content: string,
+  content: string
 ) {
   const selector = `meta[${attribute}="${key}"]`
   let element = document.head.querySelector(selector)
@@ -74,7 +73,7 @@ export function PageMetaProvider({ children }: { children: ReactNode }) {
       override,
       setOverride,
     }),
-    [override],
+    [override]
   )
 
   return (
@@ -97,6 +96,7 @@ export function DocumentMeta() {
   return null
 }
 
+// eslint-disable-next-line react-refresh/only-export-components
 export function useSetPageMeta(meta: PageMeta | null) {
   const context = useContext(PageMetaOverrideContext)
 
@@ -112,21 +112,18 @@ export function useSetPageMeta(meta: PageMeta | null) {
   }, [meta, setOverride])
 }
 
+// eslint-disable-next-line react-refresh/only-export-components
 export function useApplicationPageMeta(
   application: { title: string } | null | undefined,
-  contextLabel: string,
+  contextLabel: string
 ) {
-  const meta = useMemo(() => {
-    if (!application?.title) {
-      return null
-    }
-
-    return {
-      title: application.title,
-      description: `${contextLabel} for ${application.title} in the submission and approval workflow.`,
-      robots: "noindex, nofollow",
-    } satisfies PageMeta
-  }, [application?.title, contextLabel])
+  const meta = application?.title
+    ? ({
+        title: application.title,
+        description: `${contextLabel} for ${application.title} in the submission and approval workflow.`,
+        robots: "noindex, nofollow",
+      } satisfies PageMeta)
+    : null
 
   useSetPageMeta(meta)
 }

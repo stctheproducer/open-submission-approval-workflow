@@ -96,7 +96,9 @@ test.group('Applications show', (group) => {
       throw new Error(`Expected oldest history first, got ${JSON.stringify(body.data.history)}`)
     }
     if (body.data.history[0].actor?.id !== applicant.id) {
-      throw new Error(`Expected history actor to be preloaded, got ${JSON.stringify(body.data.history)}`)
+      throw new Error(
+        `Expected history actor to be preloaded, got ${JSON.stringify(body.data.history)}`
+      )
     }
   })
 

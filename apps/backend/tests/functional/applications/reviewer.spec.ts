@@ -183,7 +183,9 @@ test.group('Reviewer applications', (group) => {
       throw new Error(`Expected reviewer detail payload, got ${JSON.stringify(body.data)}`)
     }
     if (body.data.history[0].actor?.id !== reviewer.id) {
-      throw new Error(`Expected reviewer history actor to be preloaded, got ${JSON.stringify(body.data.history)}`)
+      throw new Error(
+        `Expected reviewer history actor to be preloaded, got ${JSON.stringify(body.data.history)}`
+      )
     }
   })
 
@@ -374,12 +376,12 @@ test.group('Reviewer applications', (group) => {
     const item = body.data.find((row: { id: number }) => row.id === application.id)
     if (!item) {
       throw new Error(
-        `Expected resubmitted application in ready queue, got ${JSON.stringify(body.data.map((row: { id: number }) => row.id))}`,
+        `Expected resubmitted application in ready queue, got ${JSON.stringify(body.data.map((row: { id: number }) => row.id))}`
       )
     }
     if (item.status !== ApplicationStatus.SUBMITTED || item.assignedReviewer !== null) {
       throw new Error(
-        `Expected resubmitted application to be unassigned ready work, got ${JSON.stringify(item)}`,
+        `Expected resubmitted application to be unassigned ready work, got ${JSON.stringify(item)}`
       )
     }
   })

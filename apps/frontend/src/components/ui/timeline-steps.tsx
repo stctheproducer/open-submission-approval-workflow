@@ -218,6 +218,7 @@ function TimelineStepsTime({ className, ...props }: React.ComponentProps<"time">
  * Exports
  * -------------------------------------------------------------------------- */
 
+/* eslint-disable react-refresh/only-export-components */
 export {
   TimelineSteps,
   TimelineStepsItem,

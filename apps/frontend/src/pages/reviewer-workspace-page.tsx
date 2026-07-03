@@ -18,7 +18,6 @@ import {
   Card,
   CardContent,
   CardDescription,
-  CardHeader,
 } from "@/components/ui/card"
 import {
   Field,
@@ -116,32 +115,6 @@ function QueueOverviewCard({ total }: { total: number }) {
           </CardDescription>
         </div>
       </CardContent>
-    </Card>
-  )
-}
-
-function MetaTile({
-  label,
-  primary,
-  secondary,
-}: {
-  label: string
-  primary: string
-  secondary: string
-}) {
-  return (
-    <Card className="rounded-2xl border border-border bg-muted/30 p-4 shadow-none">
-      <CardHeader className="gap-2">
-        <p className="text-xs font-semibold tracking-[0.24em] text-primary uppercase">
-          {label}
-        </p>
-        <CardDescription className="text-sm text-foreground">
-          {primary}
-        </CardDescription>
-        <CardDescription className="text-sm text-muted-foreground">
-          {secondary}
-        </CardDescription>
-      </CardHeader>
     </Card>
   )
 }

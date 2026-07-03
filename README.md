@@ -33,10 +33,17 @@ Core workflow rules:
 
 ## Live URL
 
-- App URL: not published yet
-- Test credentials: not published yet
+- App URL: https://apptest.chandamulenga.com
+- Backend API: https://api.apptest.chandamulenga.com (proxied through `/api` on the frontend)
 
-The project has not been published on Sevalla yet.
+### Test credentials
+
+| Role | Email | Password |
+|------|-------|----------|
+| Applicant | `applicant@example.com` | `password1234` |
+| Reviewer | `reviewer@example.com` | `password1234` |
+
+The hosted app uses the architecture described below with seeded applicant and reviewer accounts for testing.
 
 ## Tech Stack
 
@@ -48,7 +55,7 @@ The project has not been published on Sevalla yet.
 - **Cross-origin support**: backend CORS is enabled for the frontend origin in production
 - **Database**: PostgreSQL
 - **Local infrastructure**: Docker Compose for PostgreSQL and Mailpit
-- **Hosting target**: Sevalla
+- **Hosting**: Sevalla (frontend at `apptest.chandamulenga.com`, backend at `api.apptest.chandamulenga.com`)
 
 ## Architecture
 
@@ -63,8 +70,8 @@ flowchart LR
 
 Deployment shape:
 
-- backend on an `api` subdomain
-- frontend on the main app domain
+- frontend at `apptest.chandamulenga.com`
+- backend at `api.apptest.chandamulenga.com`
 - Sevalla redirects proxy `/api` requests from the frontend app to the backend service
 - session auth uses cookie-based requests between the browser and backend
 
@@ -97,15 +104,15 @@ This copies `apps/backend/.env.example` to `apps/backend/.env` if needed and gen
 
 The bootstrap command is Node-based, so it works in macOS, Linux, and native Windows shells without requiring Bash or WSL.
 
-If `pnpm setup` reports that the shell configuration already contains a pnpm section, rerun it with `--force` to replace the existing entry.
+If `pnpm run setup` reports that the shell configuration already contains a pnpm section, rerun it with `--force` to replace the existing entry.
 
 ```bash
-pnpm setup
+pnpm run setup
 ```
 
 ### Start local infrastructure
 
-This starts PostgreSQL and Mailpit using the backend compose file.
+This starts PostgreSQL (development and test databases) and Mailpit using the backend compose file.
 
 ```bash
 pnpm db:up
@@ -237,23 +244,30 @@ The test strategy is intentionally backend-heavy because that is where the asses
 
 Current baseline:
 
-- functional tests for application draft creation, editing, and ownership
-- functional tests for application submission and history
-- functional tests for reviewer queueing, review start, approval, rejection, and change requests
-- functional tests for workflow conflicts and problem-details responses
-- functional tests for option sets and attachments
-- frontend tests where they stay cheap and high-signal
+- 75 backend functional tests covering application lifecycle, workflow transitions, authorization, conflict handling, attachments, and session login
+- frontend tests for routing, review workflow helpers, and component rendering
 
 ## Deployment
 
-Deployment shape:
+### Hosting shape
 
-- **Backend**: containerized AdonisJS app on Sevalla
-- **Frontend**: static site deployment on Sevalla
-- **Routing**: backend on an `api` subdomain, frontend on the main app domain, with Sevalla redirects proxying `/api` to the backend
+- **Backend**: containerized AdonisJS app on Sevalla at `api.apptest.chandamulenga.com` (`apps/backend/Dockerfile`, multi-stage Node.js build)
+- **Frontend**: static site build on Sevalla at `apptest.chandamulenga.com` (Vite production output)
+- **Routing**: Sevalla redirects proxy `/api` requests from the frontend app to the backend service
 - **Database**: managed PostgreSQL
 
-The backend Dockerfile lives at `apps/backend/Dockerfile`.
+### Session auth and CORS
+
+The browser talks to the backend through cookie-based session requests. In production:
+
+- the frontend static site and the backend API are on different origins (main domain vs `api` subdomain)
+- the Sevalla `/api` proxy makes the frontend's `/api` requests reach the backend transparently
+- the backend CORS config (`apps/backend/config/cors.ts`) reads `CORS_ORIGIN` from the environment as a comma-separated allowlist and enables `credentials: true` so that session cookies travel cross-origin
+- in development, CORS allows all origins; in production, only the configured frontend origin is allowed
+
+### What the assessor can verify locally
+
+The local setup mirrors the production shape: the backend runs with `SESSION_DRIVER=cookie`, the frontend Vite dev server proxies `/api` to the backend, and the seeded users let you sign in as either role without any additional configuration.
 
 ### AdonisJS Plus note
 
@@ -275,7 +289,7 @@ Development in this repo follows an issue -> PR -> review -> merge trail so the 
 The delivery flow is:
 
 1. capture the work as a GitHub issue
-2. deliver the change in a reviewable PR that matches the repository's Conventional Commit rules
+2. deliver the change in a reviewable PR with a Conventional Commit title (`<type>(<scope>): <short imperative summary>`)
 3. use the PR template to describe the change, the related issue, and the verification that was performed
 4. require human review before merge
 5. merge only once the slice is correct, tested, and documented

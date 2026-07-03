@@ -35,12 +35,12 @@ import {
 import { Input } from "@/components/ui/input"
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
 import { Separator } from "@/components/ui/separator"
+import { Skeleton } from "@/components/ui/skeleton"
 import { Textarea } from "@/components/ui/textarea"
 import { AuthenticatedShell } from "@/components/authenticated-shell"
 import { apiQuery } from "@/lib/query"
 import {
   formatAmount,
-  humanizeStatus,
   type WorkflowApplication,
 } from "@/lib/review-workflow"
 import { useApplicationPageMeta } from "@/routing/page-meta"
@@ -639,18 +639,65 @@ export function ApplicantApplicationPage({
 }) {
   const params = useParams()
   const applicationId = Number(params.id)
-  const { data, isLoading, error } = useQuery(
+  const applicationQuery = useQuery(
     apiQuery.applicant.applications.show.queryOptions({
       params: { id: applicationId },
     })
   )
+  const { data } = applicationQuery
 
-  if (isLoading) {
-    return <ApplicantShell>Loading the application…</ApplicantShell>
+  if (applicationQuery.isLoading) {
+    return (
+      <ApplicantDetailShell
+        onSignedOut={onSignedOut}
+        eyebrow="Applicant area"
+        title="Loading application detail."
+        description="Pulling the current application and its workflow history into the applicant workspace."
+      >
+        <ApplicantLoadingPanel body="Loading application detail…" />
+      </ApplicantDetailShell>
+    )
   }
 
-  if (error || !data?.data) {
-    return <ApplicantShell>We couldn’t load that application.</ApplicantShell>
+  if (applicationQuery.error || !data?.data) {
+    return (
+      <ApplicantDetailShell
+        onSignedOut={onSignedOut}
+        eyebrow="Applicant area"
+        title="Application detail unavailable."
+        description="The applicant workspace could not load that application right now."
+      >
+        <Card className="rounded-[2rem] border border-border bg-background/70 shadow-sm">
+          <CardContent className="flex flex-col gap-4">
+            <p className="text-sm font-semibold tracking-[0.24em] text-primary uppercase">
+              Couldn’t load this application
+            </p>
+            <p className="text-sm leading-6 text-muted-foreground">
+              We couldn’t load that application detail page. It may have been
+              removed, or you may not have access to it.
+            </p>
+            <div className="flex flex-wrap gap-3">
+              <Button
+                size="sm"
+                onClick={() => {
+                  void applicationQuery.refetch()
+                }}
+              >
+                Retry
+              </Button>
+              <Button
+                size="sm"
+                variant="outline"
+                nativeButton={false}
+                render={<Link to="/applicant" />}
+              >
+                Back to application list
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
+      </ApplicantDetailShell>
+    )
   }
 
   return (
@@ -1303,21 +1350,49 @@ function ApplicantShell({
   )
 }
 
-function ReadOnlyRow({
-  label,
-  value,
+function ApplicantDetailShell({
+  eyebrow,
+  title,
+  description,
+  onSignedOut,
+  children,
 }: {
-  label: string
-  value?: string | null
+  eyebrow: string
+  title: string
+  description: string
+  onSignedOut?: () => void
+  children: ReactNode
 }) {
   return (
-    <div className="rounded-2xl border border-border bg-card px-4 py-3">
-      <p className="text-xs font-semibold tracking-[0.2em] text-muted-foreground uppercase">
-        {label}
-      </p>
-      <p className="mt-2 text-sm text-foreground">
-        {value || "Not provided yet"}
-      </p>
-    </div>
+    <AuthenticatedShell role="applicant" onSignedOut={onSignedOut}>
+      <div className="flex flex-col gap-8">
+        <section className="max-w-3xl space-y-4">
+          <p className="text-sm font-semibold tracking-[0.24em] text-primary uppercase">
+            {eyebrow}
+          </p>
+          <h1 className="text-4xl font-semibold tracking-tight text-foreground sm:text-5xl">
+            {title}
+          </h1>
+          <p className="max-w-2xl text-sm leading-6 text-muted-foreground sm:text-base">
+            {description}
+          </p>
+        </section>
+
+        {children}
+      </div>
+    </AuthenticatedShell>
   )
 }
+
+function ApplicantLoadingPanel({ body }: { body: string }) {
+  return (
+    <Card className="rounded-[2rem] border border-border">
+      <CardContent className="flex flex-col gap-4">
+        <Skeleton className="h-4 w-32 rounded-none" />
+        <Skeleton className="h-12 w-full rounded-none" />
+        <p className="text-sm text-muted-foreground">{body}</p>
+      </CardContent>
+    </Card>
+  )
+}
+

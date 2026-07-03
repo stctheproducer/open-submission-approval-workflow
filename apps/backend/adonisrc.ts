@@ -31,7 +31,6 @@ export default defineConfig({
     () => import('@adonisjs/session/commands'),
     () => import('@adonisplus/flow/commands'),
     () => import('@adonisjs/bouncer/commands'),
-    () => import('adonis-sail/commands'),
     () => import('@adonisjs/mail/commands'),
   ],
 

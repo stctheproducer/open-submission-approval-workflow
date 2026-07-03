@@ -1,13 +1,11 @@
 import {
   Card,
   CardContent,
-  CardDescription,
   CardHeader,
 } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import {
   TimelineSteps,
-  TimelineStepsContent,
   TimelineStepsDescription,
   TimelineStepsHeader,
   TimelineStepsIcon,
@@ -83,7 +81,7 @@ export function WorkflowTimeline({
       <CardContent className="flex flex-col gap-4">
         {(history ?? []).length > 0 ? (
           <TimelineSteps className="gap-0">
-            {history?.map((entry, index) => (
+            {history?.map((entry) => (
               <TimelineEntry key={entry.id} entry={entry} />
             ))}
           </TimelineSteps>

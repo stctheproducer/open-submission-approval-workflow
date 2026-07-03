@@ -55,7 +55,9 @@ test.group('Application submissions', (group) => {
       throw new Error(`Expected submission history entry, got ${JSON.stringify(body.data.history)}`)
     }
     if (body.data.history[0].actor?.id !== applicant.id) {
-      throw new Error(`Expected submission actor to be preloaded, got ${JSON.stringify(body.data.history)}`)
+      throw new Error(
+        `Expected submission actor to be preloaded, got ${JSON.stringify(body.data.history)}`
+      )
     }
 
     await db.assertHas('applications', { id: application.id, status: ApplicationStatus.SUBMITTED })
@@ -122,14 +124,16 @@ test.group('Application submissions', (group) => {
     const submissionEntry = body.data.history.find(
       (entry: { previousStatus: string; nextStatus: string }) =>
         entry.previousStatus === ApplicationStatus.DRAFT &&
-        entry.nextStatus === ApplicationStatus.SUBMITTED,
+        entry.nextStatus === ApplicationStatus.SUBMITTED
     )
     if (!submissionEntry) {
-      throw new Error(`Expected revision-round submission history entry, got ${JSON.stringify(body.data.history)}`)
+      throw new Error(
+        `Expected revision-round submission history entry, got ${JSON.stringify(body.data.history)}`
+      )
     }
     if (submissionEntry.actor?.id !== applicant.id) {
       throw new Error(
-        `Expected revision-round actor to be preloaded, got ${JSON.stringify(submissionEntry)}`,
+        `Expected revision-round actor to be preloaded, got ${JSON.stringify(submissionEntry)}`
       )
     }
 

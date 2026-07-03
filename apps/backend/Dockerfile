@@ -38,6 +38,8 @@ ENV PORT=3333
 
 COPY --from=build /app/apps/backend/build ./
 
+RUN mkdir -p storage tmp
+
 RUN pnpm install --prod --frozen-lockfile
 
 EXPOSE 3333

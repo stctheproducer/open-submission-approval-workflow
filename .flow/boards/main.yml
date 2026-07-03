@@ -56,3 +56,24 @@ tasks:
   - name: application-resubmission-history
     description: Record distinct revision-round submission history on reopened applications.
     track: brief
+  - name: resubmitted-reviewer-queue
+    description: Let reviewers see and start review on applications resubmitted after requested changes.
+    track: brief
+  - name: operator-workflow
+    description: Verify the root setup, local infrastructure, and development commands against the documented operator flow.
+    track: brief
+  - name: assessor-handoff
+    description: Convert the root README into a final assessor-facing handoff for the implemented system.
+    track: brief
+  - name: adr-ai-disclosure
+    description: Align the ADRs and AI usage disclosure with the finished submission.
+    track: brief
+  - name: delivery-workflow-guidance
+    description: Make the issue -> PR -> review -> merge workflow explicit in repo guidance.
+    track: brief
+  - name: session-login-seed
+    description: Let an applicant or reviewer sign in once and land in the matching area with the right role.
+    track: brief
+  - name: application-schema-reset
+    description: Reset the application draft shape so fresh starts match the spec.
+    track: brief

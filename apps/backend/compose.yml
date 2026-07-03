@@ -1,4 +1,4 @@
-# For more information: https://github.com/julien-r44/adonis-sail
+# Local PostgreSQL and Mailpit for development and tests.
 services:
   pgsql:
     image: 'postgres:18'
@@ -10,9 +10,9 @@ services:
       POSTGRES_USER: '${DB_USER}'
       POSTGRES_PASSWORD: '${DB_PASSWORD:-secret}'
     volumes:
-      - 'sailpgsql:/var/lib/postgresql'
+      - 'pgsql-data:/var/lib/postgresql'
     networks:
-      - sail
+      - local
     healthcheck:
       test: ['CMD', 'pg_isready', '-q', '-d', '${DB_DATABASE:-default}', '-U', '${DB_USER}']
       retries: 3
@@ -28,9 +28,9 @@ services:
       POSTGRES_USER: '${DB_USER}'
       POSTGRES_PASSWORD: '${DB_PASSWORD:-secret}'
     volumes:
-      - 'sailpgsql-test:/var/lib/postgresql'
+      - 'pgsql-test-data:/var/lib/postgresql'
     networks:
-      - sail
+      - local
     healthcheck:
       test: ['CMD', 'pg_isready', '-q', '-d', 'app_test', '-U', '${DB_USER}']
       retries: 3
@@ -42,7 +42,7 @@ services:
       - '${FORWARD_MAILPIT_PORT:-1025}:1025'
       - '${FORWARD_MAILPIT_DASHBOARD_PORT:-8025}:8025'
     networks:
-      - sail
+      - local
     healthcheck:
       test: ['CMD', 'curl', '-f', 'http://localhost:8025/livez']
       interval: 30s
@@ -50,9 +50,9 @@ services:
       retries: 5
 
 networks:
-  sail:
+  local:
     driver: bridge
 
 volumes:
-  sailpgsql:
-  sailpgsql-test:
+  pgsql-data:
+  pgsql-test-data:

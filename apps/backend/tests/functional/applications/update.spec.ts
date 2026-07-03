@@ -56,9 +56,9 @@ test.group('Applications update', (group) => {
     })
     await db.assertHas('applications', {
       id: application.id,
-      organization_name: 'Updated Org',
-      contact_name: 'Jane Doe',
-      contact_email: 'jane@example.com',
+      title: 'Updated title',
+      category: 'Finance',
+      description: 'Updated description',
     })
   })
 

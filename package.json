@@ -10,7 +10,7 @@
   },
   "scripts": {
     "setup": "node scripts/setup-backend-env.mjs",
-    "db:up": "docker compose -f apps/backend/compose.yml up -d pgsql mailpit",
+    "db:up": "docker compose -f apps/backend/compose.yml up -d pgsql pgsql-test mailpit",
     "db:down": "docker compose -f apps/backend/compose.yml down",
     "db:logs": "docker compose -f apps/backend/compose.yml logs -f pgsql mailpit",
     "db:migrate": "pnpm --dir apps/backend run db:migrate",
