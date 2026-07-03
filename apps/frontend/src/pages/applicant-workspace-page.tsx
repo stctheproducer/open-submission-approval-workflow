@@ -1,12 +1,14 @@
 import { type ReactNode, useState } from "react"
 import { Link, useLocation, useNavigate, useParams, useSearchParams } from "react-router"
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
+import { Inbox } from "lucide-react"
 
 import { ApplicationStatusBadge } from "@/components/workflow-badge"
 import { CardTotalBadge } from "@/components/card-total-badge"
 import { QueuePagination } from "@/components/queue-pagination"
 import { WorkflowTimeline } from "@/components/workflow-timeline"
 import { SuccessAlert } from "@/components/workspace-alert"
+import { Badge } from "@/components/ui/badge"
 import {
   Field,
   FieldContent,
@@ -21,32 +23,34 @@ import {
   CardContent,
   CardDescription,
   CardHeader,
+  CardTitle,
 } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Separator } from "@/components/ui/separator"
+import { Textarea } from "@/components/ui/textarea"
+import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group"
 import { AuthenticatedShell } from "@/components/authenticated-shell"
 import { apiQuery } from "@/lib/query"
-import { humanizeStatus, type WorkflowTransition } from "@/lib/review-workflow"
+import {
+  formatAmount,
+  humanizeStatus,
+  type WorkflowApplication,
+  type WorkflowTransition,
+} from "@/lib/review-workflow"
 
-type ApplicationRecord = {
-  id: number
-  title?: string | null
-  organizationName?: string | null
-  contactName?: string | null
-  contactEmail?: string | null
-  category?: string | null
-  description?: string | null
-  amount?: number | null
-  status: string
-  history?: WorkflowTransition[]
-  createdAt?: string
-  updatedAt?: string
-}
+const APPLICATION_CATEGORY_OPTIONS = [
+  "Operations",
+  "Finance",
+  "Technology",
+  "Sales",
+  "People",
+] as const
 
 type FormState = {
-  organizationName: string
-  contactName: string
-  contactEmail: string
+  title: string
+  category: string
+  description: string
+  amount: string
 }
 
 type ValidationError = {
@@ -74,12 +78,49 @@ function isValidEmail(value: string) {
   return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value)
 }
 
-function toFormState(application?: ApplicationRecord): FormState {
+function toFormState(application?: WorkflowApplication): FormState {
   return {
-    organizationName: application?.organizationName ?? "",
-    contactName: application?.contactName ?? "",
-    contactEmail: application?.contactEmail ?? "",
+    title: application?.title ?? "",
+    category: application?.category ?? "",
+    description: application?.description ?? "",
+    amount:
+      application?.amount === null || application?.amount === undefined
+        ? ""
+        : String(application.amount),
   }
+}
+
+function ApplicantEmptyState() {
+  return (
+    <div className="flex flex-col gap-6 px-1 py-2 sm:px-2">
+      <div className="flex flex-wrap items-start justify-between gap-4">
+        <div className="flex max-w-2xl flex-col gap-3">
+          <p className="text-sm font-semibold tracking-[0.24em] text-primary uppercase">
+            No applications yet
+          </p>
+          <h2 className="text-2xl font-semibold tracking-tight text-foreground">
+            Start your first draft.
+          </h2>
+        </div>
+      </div>
+
+      <div className="grid gap-4 rounded-[1.75rem] border border-border/70 bg-background/60 p-6 shadow-none sm:grid-cols-[auto,1fr] sm:items-center">
+        <div className="flex h-16 w-16 items-center justify-center rounded-full bg-primary/10 text-primary">
+          <Inbox className="h-8 w-8" aria-hidden="true" />
+        </div>
+        <div className="space-y-2">
+          <p className="text-xs font-semibold tracking-[0.24em] text-primary uppercase">
+            Drafts live here
+          </p>
+          <p className="text-sm leading-6 text-muted-foreground">
+            Create a draft to begin an application. Once it is in flight, you
+            can reopen it from this list and continue the workflow without
+            leaving the applicant area.
+          </p>
+        </div>
+      </div>
+    </div>
+  )
 }
 
 export function ApplicantWorkspacePage({
@@ -177,31 +218,46 @@ export function ApplicantWorkspacePage({
           </Card>
 
           <div className="grid gap-4">
-            {applications.map((application) => (
-              <Card
-                key={application.id}
-                className="rounded-[1.75rem] border border-border py-6 transition hover:border-primary/40 hover:shadow-sm"
-              >
-                <CardContent>
-                  <Link
-                    to={`/applicant/applications/${application.id}`}
-                    className="flex flex-wrap items-start justify-between gap-4"
-                  >
-                    <div className="space-y-2">
-                      <h2 className="text-2xl font-semibold tracking-tight text-foreground">
-                        {application.title ??
-                          application.organizationName ??
-                          `Application #${application.id}`}
-                      </h2>
-                      <p className="text-sm text-muted-foreground">
-                        {application.contactName ?? "No contact name yet"}
-                      </p>
-                    </div>
-                    <ApplicationStatusBadge status={application.status} />
-                  </Link>
-                </CardContent>
-              </Card>
-            ))}
+            {applications.length > 0 ? (
+              applications.map((application) => (
+                <Card
+                  key={application.id}
+                  className="rounded-[1.75rem] border border-border py-6 transition hover:border-primary/40 hover:shadow-sm"
+                >
+                  <CardContent>
+                    <Link
+                      to={`/applicant/applications/${application.id}`}
+                      className="flex flex-wrap items-start justify-between gap-4"
+                    >
+                      <div className="space-y-3">
+                        <div className="flex flex-wrap items-center gap-2">
+                          <Badge variant="secondary">
+                            {application.category ?? "Uncategorized"}
+                          </Badge>
+                          <Badge variant="outline">
+                            {formatAmount(application.amount)}
+                          </Badge>
+                          {application.attachmentUrl ? (
+                            <Badge variant="outline">Attachment</Badge>
+                          ) : null}
+                        </div>
+                        <div className="space-y-2">
+                          <h2 className="text-2xl font-semibold tracking-tight text-foreground">
+                            {application.title ?? `Application #${application.id}`}
+                          </h2>
+                          <p className="text-sm text-muted-foreground">
+                            {application.description ?? "No description yet"}
+                          </p>
+                        </div>
+                      </div>
+                      <ApplicationStatusBadge status={application.status} />
+                    </Link>
+                  </CardContent>
+                </Card>
+              ))
+            ) : (
+              <ApplicantEmptyState />
+            )}
           </div>
         </div>
 
@@ -211,6 +267,14 @@ export function ApplicantWorkspacePage({
               <p className="text-sm font-semibold tracking-[0.24em] text-primary uppercase">
                 Workflow notes
               </p>
+              <CardTitle className="text-2xl normal-case tracking-tight">
+                What stays with the application
+              </CardTitle>
+              <CardDescription className="max-w-2xl text-sm leading-6">
+                The reviewer sees the draft title, category, description,
+                amount, and optional attachment. Nothing on this screen relies
+                on the retired contact or organization fields.
+              </CardDescription>
             </CardHeader>
             <CardContent className="flex flex-col gap-3 text-sm leading-6 text-muted-foreground">
               <p>Drafts stay editable until you submit the application.</p>
@@ -257,7 +321,7 @@ export function ApplicantApplicationPage({
     <ApplicantShell onSignedOut={onSignedOut}>
       <ApplicantApplicationWorkspace
         key={`${data.data.id}:${data.data.updatedAt ?? ""}`}
-        application={data.data as ApplicationRecord}
+        application={data.data as WorkflowApplication}
         applicationId={applicationId}
         mode={mode}
       />
@@ -270,7 +334,7 @@ function ApplicantApplicationWorkspace({
   applicationId,
   mode,
 }: {
-  application: ApplicationRecord
+  application: WorkflowApplication
   applicationId: number
   mode: "view" | "edit"
 }) {
@@ -278,6 +342,7 @@ function ApplicantApplicationWorkspace({
   const navigate = useNavigate()
   const queryClient = useQueryClient()
   const [form, setForm] = useState<FormState>(() => toFormState(application))
+  const [attachmentFile, setAttachmentFile] = useState<File | null>(null)
   const [successMessage, setSuccessMessage] = useState<string | null>(null)
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({})
 
@@ -293,19 +358,18 @@ function ApplicantApplicationWorkspace({
       setFieldErrors(nextErrors)
       setSuccessMessage(null)
     },
-    onSuccess: (response) => {
-      queryClient.setQueryData(
-        apiQuery.applicant.applications.show.queryKey({
-          params: { id: applicationId },
-        }),
-        response
+  })
+
+  const uploadAttachment = useMutation({
+    ...apiQuery.applicant.applications.attachment.store.mutationOptions(),
+    onError: async (error) => {
+      const response = await parseErrorMessages(error)
+      const nextErrors = Object.fromEntries(
+        (response.errors ?? [])
+          .filter((entry) => Boolean(entry.field))
+          .map((entry) => [entry.field as string, entry.message])
       )
-      queryClient.invalidateQueries(
-        apiQuery.applicant.applications.pathFilter()
-      )
-      setForm(toFormState(response.data as ApplicationRecord))
-      setFieldErrors({})
-      setSuccessMessage("Draft saved.")
+      setFieldErrors(nextErrors)
     },
   })
 
@@ -362,23 +426,78 @@ function ApplicantApplicationWorkspace({
   const canEdit =
     (mode === "edit" || location.pathname.endsWith("/edit")) && isDraft
 
-  function handleSaveDraft() {
-    if (form.contactEmail && !isValidEmail(form.contactEmail)) {
-      setFieldErrors({
-        contactEmail: "The contact email field must be a valid email address.",
-      })
+  async function handleSaveDraft() {
+    const numericAmount = Number(form.amount)
+    if (
+      !form.title.trim() ||
+      !form.category.trim() ||
+      !form.description.trim() ||
+      Number.isNaN(numericAmount) ||
+      numericAmount <= 0
+    ) {
+      setFieldErrors((current) => ({
+        ...current,
+        ...(form.title.trim() ? {} : { title: "Title is required." }),
+        ...(form.category.trim() ? {} : { category: "Choose a category." }),
+        ...(form.description.trim()
+          ? {}
+          : { description: "Description is required." }),
+        ...(Number.isNaN(numericAmount) || numericAmount <= 0
+          ? { amount: "Enter a valid positive amount." }
+          : {}),
+      }))
       setSuccessMessage(null)
       return
     }
 
-    updateDraft.mutate({
-      params: { id: application.id },
-      body: {
-        organizationName: form.organizationName || null,
-        contactName: form.contactName || null,
-        contactEmail: form.contactEmail || null,
-      },
-    })
+    try {
+      const savedDraft = await updateDraft.mutateAsync({
+        params: { id: application.id },
+        body: {
+          title: form.title.trim(),
+          category: form.category,
+          description: form.description.trim(),
+          amount: numericAmount,
+        },
+      })
+
+      queryClient.setQueryData(
+        apiQuery.applicant.applications.show.queryKey({
+          params: { id: applicationId },
+        }),
+        savedDraft
+      )
+      queryClient.invalidateQueries(
+        apiQuery.applicant.applications.pathFilter()
+      )
+      setForm(toFormState(savedDraft.data as WorkflowApplication))
+      setFieldErrors({})
+      setSuccessMessage("Draft saved.")
+
+      if (attachmentFile) {
+        const updatedWithAttachment = await uploadAttachment.mutateAsync({
+          params: { id: application.id },
+          body: {
+            attachment: attachmentFile,
+          },
+        })
+
+        queryClient.setQueryData(
+          apiQuery.applicant.applications.show.queryKey({
+            params: { id: applicationId },
+          }),
+          updatedWithAttachment
+        )
+        queryClient.invalidateQueries(
+          apiQuery.applicant.applications.pathFilter()
+        )
+        setForm(toFormState(updatedWithAttachment.data as WorkflowApplication))
+        setAttachmentFile(null)
+        setSuccessMessage("Draft saved and attachment uploaded.")
+      }
+    } catch {
+      // Validation and transport errors are surfaced through the mutation callbacks.
+    }
   }
 
   function handleReopenDraft() {
@@ -410,9 +529,7 @@ function ApplicantApplicationWorkspace({
                 <h1 className="text-4xl font-semibold tracking-tight text-foreground">
                   {canEdit
                     ? "Edit draft application"
-                    : (application.title ??
-                      application.organizationName ??
-                      `Application #${application.id}`)}
+                    : (application.title ?? `Application #${application.id}`)}
                 </h1>
                 <div className="flex flex-wrap items-center gap-3">
                   <p className="text-sm text-muted-foreground">
@@ -474,108 +591,189 @@ function ApplicantApplicationWorkspace({
                 className="flex flex-col gap-5"
                 onSubmit={(event) => {
                   event.preventDefault()
-                  handleSaveDraft()
+                  void handleSaveDraft()
                 }}
               >
                 <FieldGroup className="gap-5">
-                  <Field
-                    data-invalid={
-                      Boolean(fieldErrors.organizationName) || undefined
-                    }
-                  >
+                  <Field data-invalid={Boolean(fieldErrors.title) || undefined}>
                     <FieldContent>
-                      <FieldLabel htmlFor="organization-name">
-                        Organization name
+                      <FieldLabel htmlFor="application-title">
+                        Title
                       </FieldLabel>
-                      <FieldDescription id="organization-name-description">
-                        The legal or trading name shown to reviewers.
+                      <FieldDescription id="application-title-description">
+                        Give the application a clear working title for the
+                        review queue.
                       </FieldDescription>
                       <Input
-                        id="organization-name"
-                        value={form.organizationName}
+                        id="application-title"
+                        value={form.title}
                         onChange={(event) => {
                           setForm((current) => ({
                             ...current,
-                            organizationName: event.target.value,
+                            title: event.target.value,
                           }))
                         }}
-                        aria-invalid={Boolean(fieldErrors.organizationName)}
+                        aria-invalid={Boolean(fieldErrors.title)}
                         aria-describedby={
-                          fieldErrors.organizationName
-                            ? "organization-name-description organization-name-error"
-                            : "organization-name-description"
+                          fieldErrors.title
+                            ? "application-title-description application-title-error"
+                            : "application-title-description"
                         }
                       />
-                      <FieldError id="organization-name-error">
-                        {fieldErrors.organizationName}
+                      <FieldError id="application-title-error">
+                        {fieldErrors.title}
                       </FieldError>
                     </FieldContent>
                   </Field>
 
-                  <Field
-                    data-invalid={Boolean(fieldErrors.contactName) || undefined}
-                  >
+                  <Field data-invalid={Boolean(fieldErrors.category) || undefined}>
                     <FieldContent>
-                      <FieldLabel htmlFor="contact-name">
-                        Contact name
+                      <FieldLabel htmlFor="application-category">
+                        Category
                       </FieldLabel>
-                      <FieldDescription id="contact-name-description">
-                        The person reviewers should address in the workflow.
+                      <FieldDescription id="application-category-description">
+                        Choose one fixed category for the application.
                       </FieldDescription>
-                      <Input
-                        id="contact-name"
-                        value={form.contactName}
-                        onChange={(event) => {
+                      <ToggleGroup
+                        aria-label="Application category"
+                        className="flex flex-wrap justify-start"
+                        spacing={0}
+                        value={[form.category || ""]}
+                        onValueChange={(nextValue) => {
+                          const nextCategory = nextValue[0] ?? ""
                           setForm((current) => ({
                             ...current,
-                            contactName: event.target.value,
+                            category: nextCategory,
                           }))
+                          if (fieldErrors.category) {
+                            setFieldErrors((current) => {
+                              const { category: _category, ...rest } = current
+                              return rest
+                            })
+                          }
                         }}
-                        aria-invalid={Boolean(fieldErrors.contactName)}
-                        aria-describedby={
-                          fieldErrors.contactName
-                            ? "contact-name-description contact-name-error"
-                            : "contact-name-description"
-                        }
-                      />
-                      <FieldError id="contact-name-error">
-                        {fieldErrors.contactName}
+                      >
+                        {APPLICATION_CATEGORY_OPTIONS.map((option) => (
+                          <ToggleGroupItem
+                            key={option}
+                            value={option}
+                            variant="outline"
+                            size="sm"
+                          >
+                            {option}
+                          </ToggleGroupItem>
+                        ))}
+                      </ToggleGroup>
+                      <FieldError id="application-category-error">
+                        {fieldErrors.category}
                       </FieldError>
                     </FieldContent>
                   </Field>
 
-                  <Field
-                    data-invalid={
-                      Boolean(fieldErrors.contactEmail) || undefined
-                    }
-                  >
+                  <Field data-invalid={Boolean(fieldErrors.description) || undefined}>
                     <FieldContent>
-                      <FieldLabel htmlFor="contact-email">
-                        Contact email
+                      <FieldLabel htmlFor="application-description">
+                        Description
                       </FieldLabel>
-                      <FieldDescription id="contact-email-description">
-                        Used for submission follow-up and reviewer
-                        communication.
+                      <FieldDescription id="application-description-description">
+                        Explain what the reviewer needs to understand in order
+                        to assess the application.
                       </FieldDescription>
-                      <Input
-                        id="contact-email"
-                        type="email"
-                        value={form.contactEmail}
+                      <Textarea
+                        id="application-description"
+                        value={form.description}
                         onChange={(event) => {
                           setForm((current) => ({
                             ...current,
-                            contactEmail: event.target.value,
+                            description: event.target.value,
                           }))
                         }}
-                        aria-invalid={Boolean(fieldErrors.contactEmail)}
+                        aria-invalid={Boolean(fieldErrors.description)}
                         aria-describedby={
-                          fieldErrors.contactEmail
-                            ? "contact-email-description contact-email-error"
-                            : "contact-email-description"
+                          fieldErrors.description
+                            ? "application-description-description application-description-error"
+                            : "application-description-description"
                         }
                       />
-                      <FieldError id="contact-email-error">
-                        {fieldErrors.contactEmail}
+                      <FieldError id="application-description-error">
+                        {fieldErrors.description}
+                      </FieldError>
+                    </FieldContent>
+                  </Field>
+
+                  <Field data-invalid={Boolean(fieldErrors.amount) || undefined}>
+                    <FieldContent>
+                      <FieldLabel htmlFor="application-amount">
+                        Amount
+                      </FieldLabel>
+                      <FieldDescription id="application-amount-description">
+                        Enter the requested amount as a positive number.
+                      </FieldDescription>
+                      <Input
+                        id="application-amount"
+                        type="number"
+                        min="0"
+                        step="0.01"
+                        inputMode="decimal"
+                        value={form.amount}
+                        onChange={(event) => {
+                          setForm((current) => ({
+                            ...current,
+                            amount: event.target.value,
+                          }))
+                        }}
+                        aria-invalid={Boolean(fieldErrors.amount)}
+                        aria-describedby={
+                          fieldErrors.amount
+                            ? "application-amount-description application-amount-error"
+                            : "application-amount-description"
+                        }
+                      />
+                      <FieldError id="application-amount-error">
+                        {fieldErrors.amount}
+                      </FieldError>
+                    </FieldContent>
+                  </Field>
+
+                  <Field data-invalid={Boolean(fieldErrors.attachment) || undefined}>
+                    <FieldContent>
+                      <FieldLabel htmlFor="application-attachment">
+                        Optional file attachment
+                      </FieldLabel>
+                      <FieldDescription id="application-attachment-description">
+                        Upload one supporting file after saving the draft.
+                        Allowed types are PDF, PNG, JPEG, and DOCX up to 5 MB.
+                      </FieldDescription>
+                      <Input
+                        id="application-attachment"
+                        type="file"
+                        accept=".pdf,.png,.jpeg,.jpg,.docx,application/pdf,image/png,image/jpeg,application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+                        onChange={(event) => {
+                          const nextFile = event.target.files?.[0] ?? null
+                          setAttachmentFile(nextFile)
+                          if (fieldErrors.attachment) {
+                            setFieldErrors((current) => {
+                              const { attachment: _attachment, ...rest } = current
+                              return rest
+                            })
+                          }
+                        }}
+                        aria-invalid={Boolean(fieldErrors.attachment)}
+                        aria-describedby={
+                          fieldErrors.attachment
+                            ? "application-attachment-description application-attachment-error"
+                            : "application-attachment-description"
+                        }
+                      />
+                      {attachmentFile ? (
+                        <Badge variant="secondary">
+                          Selected: {attachmentFile.name}
+                        </Badge>
+                      ) : application.attachmentUrl ? (
+                        <Badge variant="outline">Attachment already uploaded</Badge>
+                      ) : null}
+                      <FieldError id="application-attachment-error">
+                        {fieldErrors.attachment}
                       </FieldError>
                     </FieldContent>
                   </Field>
@@ -602,19 +800,48 @@ function ApplicantApplicationWorkspace({
               </form>
             ) : (
               <Card className="rounded-[1.75rem] border border-border bg-muted/40 py-6 shadow-none">
+                <CardHeader>
+                  <CardTitle className="text-2xl normal-case tracking-tight">
+                    Draft details
+                  </CardTitle>
+                  <CardDescription>
+                    These are the fields reviewers will see after you submit.
+                  </CardDescription>
+                </CardHeader>
                 <CardContent className="grid gap-4">
+                  <ReadOnlyRow label="Title" value={application.title} />
+                  <ReadOnlyRow label="Category" value={application.category} />
                   <ReadOnlyRow
-                    label="Organization name"
-                    value={application.organizationName}
+                    label="Description"
+                    value={application.description}
                   />
                   <ReadOnlyRow
-                    label="Contact name"
-                    value={application.contactName}
+                    label="Amount"
+                    value={formatAmount(application.amount)}
                   />
-                  <ReadOnlyRow
-                    label="Contact email"
-                    value={application.contactEmail}
-                  />
+                  <div className="rounded-2xl border border-border bg-card px-4 py-3">
+                    <p className="text-xs font-semibold tracking-[0.2em] text-muted-foreground uppercase">
+                      Attachment
+                    </p>
+                    {application.attachmentUrl ? (
+                      <Badge
+                        variant="outline"
+                        render={
+                          <a
+                            href={application.attachmentUrl}
+                            target="_blank"
+                            rel="noreferrer"
+                          >
+                            View uploaded file
+                          </a>
+                        }
+                      />
+                    ) : (
+                      <p className="mt-2 text-sm text-foreground">
+                        No attachment uploaded yet.
+                      </p>
+                    )}
+                  </div>
                 </CardContent>
               </Card>
             )}
