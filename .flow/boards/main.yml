@@ -35,6 +35,9 @@ tasks:
   - name: workflow-conflicts
     description: Make illegal workflow transitions return consistent conflict behavior.
     track: brief
+  - name: api-error-responses
+    description: Make every thrown API exception return a single RFC 9457 problem-details response.
+    track: brief
   - name: application-read-history
     description: Let an applicant review any owned application and its status-transition history.
     track: brief

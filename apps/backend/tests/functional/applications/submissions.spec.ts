@@ -6,6 +6,7 @@ import { ApplicationAuditLogEntryFactory } from '#database/factories/application
 import { ApplicationStatus } from '#values/application_status'
 import { ApplicationAuditEntryFactory } from '#database/factories/application_audit_entry_factory'
 import { ApplicationStatusTransitionFactory } from '#database/factories/application_status_transition_factory'
+import { assertProblemDetails } from './problem_details.js'
 
 test.group('Application submissions', (group) => {
   group.each.setup(() => testUtils.db('test').truncate())
@@ -18,6 +19,7 @@ test.group('Application submissions', (group) => {
       .json({})
 
     response.assertStatus(401)
+    assertProblemDetails(response.body(), 401)
   })
 
   test('submits an owned draft application and returns the submitted detail with the first history entry (200)', async ({
@@ -156,6 +158,7 @@ test.group('Application submissions', (group) => {
       .loginAs(applicant)
       .json({})
     foreignResponse.assertStatus(404)
+    assertProblemDetails(foreignResponse.body(), 404)
 
     const missingResponse = await client
       .visit('applicant.applications.submissions.store', { application_id: 999999 })
@@ -163,6 +166,7 @@ test.group('Application submissions', (group) => {
       .loginAs(applicant)
       .json({})
     missingResponse.assertStatus(404)
+    assertProblemDetails(missingResponse.body(), 404)
   })
 
   test('rejects submission of a non-draft application with a conflict error (409)', async ({
@@ -182,6 +186,7 @@ test.group('Application submissions', (group) => {
       .json({})
 
     response.assertStatus(409)
+    assertProblemDetails(response.body(), 409)
     await db.assertHas('applications', { id: application.id, status: ApplicationStatus.SUBMITTED })
   })
 })

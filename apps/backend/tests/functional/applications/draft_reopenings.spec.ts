@@ -5,6 +5,7 @@ import User from '#models/user'
 import { ApplicationFactory } from '#database/factories/application_factory'
 import { ApplicationStatus } from '#values/application_status'
 import { ApplicationAuditEntryFactory } from '#database/factories/application_audit_entry_factory'
+import { assertProblemDetails } from './problem_details.js'
 
 async function createApplicant() {
   const applicant = await UserFactory.create()
@@ -67,6 +68,7 @@ test.group('Application draft reopenings', (group) => {
     })
 
     response.assertStatus(401)
+    assertProblemDetails(response.body(), 401)
   })
 
   test('rejects a non-owner applicant from reopening an application (403)', async ({ client }) => {
@@ -83,6 +85,7 @@ test.group('Application draft reopenings', (group) => {
       .loginAs(nonOwnerApplicant)
 
     response.assertStatus(403)
+    assertProblemDetails(response.body(), 403)
   })
 
   test('rejects reopening a non-eligible application with a conflict error (409)', async ({
@@ -101,6 +104,7 @@ test.group('Application draft reopenings', (group) => {
       .loginAs(applicant)
 
     response.assertStatus(409)
+    assertProblemDetails(response.body(), 409)
     await db.assertHas('applications', {
       id: application.id,
       status: ApplicationStatus.UNDER_REVIEW,
@@ -115,5 +119,6 @@ test.group('Application draft reopenings', (group) => {
       .loginAs(applicant)
 
     response.assertStatus(404)
+    assertProblemDetails(response.body(), 404)
   })
 })

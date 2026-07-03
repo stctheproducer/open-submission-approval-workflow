@@ -12,9 +12,6 @@ export default class ApplicationChangeRequestsController {
     workflowService: ApplicationWorkflowService
   ) {
     const user = auth.getUserOrFail()
-    if (user.role !== 'reviewer') {
-      return response.forbidden({ errors: [{ message: 'Forbidden' }] })
-    }
 
     const payload = await request.validateUsing(requestApplicationChangeValidator)
     const application = await Application.findOrFail(params.id)

@@ -4,6 +4,7 @@ import { UserFactory } from '#database/factories/user_factory'
 import User from '#models/user'
 import { ApplicationFactory } from '#database/factories/application_factory'
 import { ApplicationStatus } from '#values/application_status'
+import { assertProblemDetails } from './problem_details.js'
 
 async function createReviewer() {
   const reviewer = await UserFactory.create()
@@ -18,6 +19,7 @@ test.group('Reviewer applications', (group) => {
   test('rejects unauthenticated requests to the reviewer queue (401)', async ({ client }) => {
     const response = await client.visit('reviewer.applications.index')
     response.assertStatus(401)
+    assertProblemDetails(response.body(), 401)
   })
 
   test('rejects non-reviewer users from the reviewer queue (403)', async ({ client }) => {
@@ -29,6 +31,7 @@ test.group('Reviewer applications', (group) => {
       .loginAs(applicant)
 
     response.assertStatus(403)
+    assertProblemDetails(response.body(), 403)
   })
 
   test('lists the combined reviewer queue paginated with most-recent-first ordering (200)', async ({
@@ -122,6 +125,7 @@ test.group('Reviewer applications', (group) => {
       .loginAs(applicant)
 
     response.assertStatus(403)
+    assertProblemDetails(response.body(), 403)
   })
 
   test('returns 404 for an inaccessible application (404)', async ({ client }) => {
@@ -139,6 +143,7 @@ test.group('Reviewer applications', (group) => {
       .loginAs(reviewer)
 
     response.assertStatus(404)
+    assertProblemDetails(response.body(), 404)
   })
 
   test('rejects non-reviewer users from starting review (403)', async ({ client }) => {
@@ -157,6 +162,7 @@ test.group('Reviewer applications', (group) => {
       .loginAs(applicant)
 
     response.assertStatus(403)
+    assertProblemDetails(response.body(), 403)
   })
 
   test('starts review on an eligible submitted application and returns the updated detail (200)', async ({
@@ -222,6 +228,7 @@ test.group('Reviewer applications', (group) => {
       .loginAs(reviewer)
 
     response.assertStatus(409)
+    assertProblemDetails(response.body(), 409)
     await db.assertHas('applications', {
       id: application.id,
       status: ApplicationStatus.UNDER_REVIEW,
@@ -238,5 +245,6 @@ test.group('Reviewer applications', (group) => {
       .loginAs(reviewer)
 
     response.assertStatus(404)
+    assertProblemDetails(response.body(), 404)
   })
 })

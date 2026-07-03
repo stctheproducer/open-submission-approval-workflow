@@ -1,6 +1,47 @@
 import { HttpContext } from '@adonisjs/core/http'
 import { BaseSerializer } from '@adonisjs/core/transformers'
 import { type SimplePaginatorMetaKeys } from '@adonisjs/lucid/types/querybuilder'
+import { errors as vineErrors } from '@vinejs/vine'
+import { errors as authErrors } from '@adonisjs/auth'
+import { errors as bouncerErrors } from '@adonisjs/bouncer'
+
+function makeProblemDetails(error: { message?: string; status?: number }, ctx: HttpContext) {
+  const status = typeof error.status === 'number' ? error.status : 500
+  return {
+    type: 'about:blank',
+    title:
+      status === 400
+        ? 'Bad Request'
+        : status === 401
+          ? 'Unauthorized'
+          : status === 403
+            ? 'Forbidden'
+            : status === 404
+              ? 'Not Found'
+              : status === 409
+                ? 'Conflict'
+                : 'Unprocessable Content',
+    status,
+    detail: error.message ?? 'Request failed',
+    instance: ctx.request.url(),
+  }
+}
+
+function patchExceptionHandle(exception: any, status: number) {
+  exception.prototype.handle = function (
+    this: { message: string },
+    _error: unknown,
+    ctx: HttpContext
+  ) {
+    ctx.response.status(status)
+    return ctx.serialize.withoutWrapping(makeProblemDetails({ message: this.message, status }, ctx))
+  }
+}
+
+patchExceptionHandle(vineErrors.E_VALIDATION_ERROR, 422)
+patchExceptionHandle(authErrors.E_UNAUTHORIZED_ACCESS, 401)
+patchExceptionHandle(authErrors.E_INVALID_CREDENTIALS, 400)
+patchExceptionHandle(bouncerErrors.E_AUTHORIZATION_FAILURE, 403)
 
 /**
  * Custom serializer for API responses that ensures consistent JSON structure

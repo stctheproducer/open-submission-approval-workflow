@@ -5,6 +5,7 @@ import User from '#models/user'
 import { ApplicationFactory } from '#database/factories/application_factory'
 import { ApplicationStatus } from '#values/application_status'
 import { ApplicationAuditEntryFactory } from '#database/factories/application_audit_entry_factory'
+import { assertProblemDetails } from './problem_details.js'
 
 async function createReviewer() {
   const reviewer = await UserFactory.create()
@@ -28,6 +29,7 @@ test.group('Application change requests', (group) => {
       .json({ comment: 'Please update the budget section' })
 
     response.assertStatus(401)
+    assertProblemDetails(response.body(), 401)
   })
 
   test('rejects non-reviewer users from requesting changes (403)', async ({ client }) => {
@@ -43,6 +45,7 @@ test.group('Application change requests', (group) => {
       .json({ comment: 'Please update the budget section' })
 
     response.assertStatus(403)
+    assertProblemDetails(response.body(), 403)
   })
 
   test('rejects an unassigned reviewer from requesting changes (403)', async ({ client, db }) => {
@@ -62,6 +65,7 @@ test.group('Application change requests', (group) => {
       .json({ comment: 'Please update the budget section' })
 
     response.assertStatus(403)
+    assertProblemDetails(response.body(), 403)
     await db.assertHas('applications', {
       id: application.id,
       status: ApplicationStatus.UNDER_REVIEW,
@@ -95,10 +99,7 @@ test.group('Application change requests', (group) => {
         .json(row.body as any)
 
       response.assertStatus(422)
-      const body = response.body() as any
-      if (!Array.isArray(body.errors) || body.errors.length === 0) {
-        throw new Error(`Expected validation errors for ${row.label}, got ${JSON.stringify(body)}`)
-      }
+      assertProblemDetails(response.body(), 422, { validation: true })
     }
 
     await db.assertMissing('application_audit_entries', { application_id: application.id })
@@ -168,6 +169,7 @@ test.group('Application change requests', (group) => {
       .json({ comment: 'Please update the budget section' })
 
     response.assertStatus(409)
+    assertProblemDetails(response.body(), 409)
     await db.assertHas('applications', {
       id: application.id,
       status: ApplicationStatus.APPROVED,
@@ -183,5 +185,6 @@ test.group('Application change requests', (group) => {
       .json({ comment: 'Please update the budget section' })
 
     response.assertStatus(404)
+    assertProblemDetails(response.body(), 404)
   })
 })

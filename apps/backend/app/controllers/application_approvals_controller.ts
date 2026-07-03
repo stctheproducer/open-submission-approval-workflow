@@ -12,9 +12,6 @@ export default class ApplicationApprovalsController {
     approvalService: ApplicationApprovalService
   ) {
     const user = auth.getUserOrFail()
-    if (user.role !== 'reviewer') {
-      return response.forbidden({ errors: [{ message: 'Forbidden' }] })
-    }
 
     const application = await Application.findOrFail(params.applicationId)
     await bouncer.with(ApplicationPolicy).authorize('approve', application)

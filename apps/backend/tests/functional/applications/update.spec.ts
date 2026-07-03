@@ -3,6 +3,7 @@ import testUtils from '@adonisjs/core/services/test_utils'
 import { UserFactory } from '#database/factories/user_factory'
 import { ApplicationFactory } from '#database/factories/application_factory'
 import { ApplicationStatus } from '#values/application_status'
+import { assertProblemDetails } from './problem_details.js'
 
 test.group('Applications update', (group) => {
   group.each.setup(() => testUtils.db('test').truncate())
@@ -15,6 +16,7 @@ test.group('Applications update', (group) => {
       .json({ organizationName: 'Test Org' })
 
     response.assertStatus(401)
+    assertProblemDetails(response.body(), 401)
   })
 
   test('updates an owned draft application and returns the wrapped resource (200)', async ({
@@ -64,10 +66,7 @@ test.group('Applications update', (group) => {
       .json({ contactEmail: 'not-an-email', category: 'Unsupported' as any })
 
     response.assertStatus(422)
-    const body = response.body() as { errors?: unknown[] }
-    if (!body.errors || !Array.isArray(body.errors) || body.errors.length === 0) {
-      throw new Error(`Expected errors array, got ${JSON.stringify(body)}`)
-    }
+    assertProblemDetails(response.body(), 422, { validation: true })
   })
 
   test('returns 404 when updating a foreign or non-existent application — "{label}"')
@@ -93,6 +92,7 @@ test.group('Applications update', (group) => {
         .json({ organizationName: 'Test Org' })
 
       response.assertStatus(404)
+      assertProblemDetails(response.body(), 404)
     })
 
   test('rejects updates to a non-draft application with a conflict error', async ({
@@ -112,6 +112,7 @@ test.group('Applications update', (group) => {
       .json({ organizationName: 'Updated Org' })
 
     response.assertStatus(409)
+    assertProblemDetails(response.body(), 409)
     await db.assertHas('applications', {
       id: application.id,
       status: ApplicationStatus.SUBMITTED,

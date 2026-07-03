@@ -5,6 +5,7 @@ import { ApplicationFactory } from '#database/factories/application_factory'
 import { ApplicationStatusTransitionFactory } from '#database/factories/application_status_transition_factory'
 import { DateTime } from 'luxon'
 import { ApplicationStatus } from '#values/application_status'
+import { assertProblemDetails } from './problem_details.js'
 
 const NON_EXISTENT_ID = 99999999
 
@@ -15,6 +16,7 @@ test.group('Applications show', (group) => {
     const application = await ApplicationFactory.create()
     const response = await client.visit('applicant.applications.show', { id: application.id })
     response.assertStatus(401)
+    assertProblemDetails(response.body(), 401)
   })
 
   test('shows an owned draft application and returns the wrapped resource (200)', async ({
@@ -104,11 +106,13 @@ test.group('Applications show', (group) => {
       .withGuard('web')
       .loginAs(applicant)
     otherAppResponse.assertStatus(404)
+    assertProblemDetails(otherAppResponse.body(), 404)
 
     const nonExistentResponse = await client
       .visit('applicant.applications.show', { id: NON_EXISTENT_ID })
       .withGuard('web')
       .loginAs(applicant)
     nonExistentResponse.assertStatus(404)
+    assertProblemDetails(nonExistentResponse.body(), 404)
   })
 })
