@@ -1,9 +1,10 @@
-import { useEffect, useState } from "react"
+import { useState } from "react"
 import { Link, useLocation, useNavigate, useParams } from "react-router"
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
 
 import { Button } from "@/components/ui/button"
 import { apiQuery } from "@/lib/query"
+import { formatDate, formatTimelineLabel, getStatusTone, humanizeStatus, type WorkflowTransition } from "@/lib/review-workflow"
 import { cn } from "@/lib/utils"
 
 type ApplicationRecord = {
@@ -16,21 +17,9 @@ type ApplicationRecord = {
   description?: string | null
   amount?: number | null
   status: string
-  history?: TransitionRecord[]
+  history?: WorkflowTransition[]
   createdAt?: string
   updatedAt?: string
-}
-
-type TransitionRecord = {
-  id: number
-  previousStatus: string | null
-  nextStatus: string
-  comment?: string | null
-  createdAt?: string
-  actor?: {
-    fullName?: string | null
-    email?: string | null
-  } | null
 }
 
 type FormState = {
@@ -62,44 +51,6 @@ function parseErrorMessages(error: unknown) {
 
 function isValidEmail(value: string) {
   return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value)
-}
-
-function humanizeStatus(status: string) {
-  const phrase = status.split("_").join(" ")
-  return `${phrase.charAt(0).toUpperCase()}${phrase.slice(1)}`
-}
-
-function formatTimelineLabel(entry: TransitionRecord) {
-  const from = entry.previousStatus ? humanizeStatus(entry.previousStatus) : "Created"
-  return `${from} -> ${humanizeStatus(entry.nextStatus)}`
-}
-
-function formatDate(value?: string) {
-  if (!value) {
-    return "No timestamp recorded"
-  }
-
-  return new Intl.DateTimeFormat("en-US", {
-    dateStyle: "medium",
-    timeStyle: "short",
-  }).format(new Date(value))
-}
-
-function getStatusTone(status: string) {
-  switch (status) {
-    case "draft":
-      return "border-amber-300/60 bg-amber-100/70 text-amber-900"
-    case "submitted":
-      return "border-sky-300/60 bg-sky-100/70 text-sky-950"
-    case "changes_requested":
-      return "border-orange-300/60 bg-orange-100/80 text-orange-950"
-    case "approved":
-      return "border-emerald-300/60 bg-emerald-100/80 text-emerald-950"
-    case "rejected":
-      return "border-rose-300/60 bg-rose-100/80 text-rose-950"
-    default:
-      return "border-border bg-muted text-foreground"
-  }
 }
 
 function toFormState(application?: ApplicationRecord): FormState {
@@ -216,34 +167,49 @@ export function ApplicantWorkspacePage() {
 }
 
 export function ApplicantApplicationPage({ mode }: { mode: "view" | "edit" }) {
-  const location = useLocation()
-  const navigate = useNavigate()
-  const queryClient = useQueryClient()
   const params = useParams()
   const applicationId = Number(params.id)
-  const [form, setForm] = useState<FormState>({
-    organizationName: "",
-    contactName: "",
-    contactEmail: "",
-  })
-  const [application, setApplication] = useState<ApplicationRecord | null>(null)
-  const [successMessage, setSuccessMessage] = useState<string | null>(null)
-  const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({})
-
-  const applicationQuery = useQuery(
+  const { data, isLoading, error } = useQuery(
     apiQuery.applicant.applications.show.queryOptions({
       params: { id: applicationId },
     }),
   )
 
-  useEffect(() => {
-    if (applicationQuery.data?.data) {
-      const nextApplication = applicationQuery.data.data as ApplicationRecord
-      setApplication(nextApplication)
-      setForm(toFormState(nextApplication))
-      setFieldErrors({})
-    }
-  }, [applicationQuery.data])
+  if (isLoading) {
+    return <ApplicantShell>Loading the application…</ApplicantShell>
+  }
+
+  if (error || !data?.data) {
+    return <ApplicantShell>We couldn’t load that application.</ApplicantShell>
+  }
+
+  return (
+    <ApplicantShell>
+      <ApplicantApplicationWorkspace
+        key={`${data.data.id}:${data.data.updatedAt ?? ""}`}
+        application={data.data as ApplicationRecord}
+        applicationId={applicationId}
+        mode={mode}
+      />
+    </ApplicantShell>
+  )
+}
+
+function ApplicantApplicationWorkspace({
+  application,
+  applicationId,
+  mode,
+}: {
+  application: ApplicationRecord
+  applicationId: number
+  mode: "view" | "edit"
+}) {
+  const location = useLocation()
+  const navigate = useNavigate()
+  const queryClient = useQueryClient()
+  const [form, setForm] = useState<FormState>(() => toFormState(application))
+  const [successMessage, setSuccessMessage] = useState<string | null>(null)
+  const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({})
 
   const updateDraft = useMutation({
     ...apiQuery.applicant.applications.update.mutationOptions(),
@@ -258,14 +224,12 @@ export function ApplicantApplicationPage({ mode }: { mode: "view" | "edit" }) {
       setSuccessMessage(null)
     },
     onSuccess: (response) => {
-      const nextApplication = response.data as ApplicationRecord
       queryClient.setQueryData(
         apiQuery.applicant.applications.show.queryKey({ params: { id: applicationId } }),
         response,
       )
       queryClient.invalidateQueries(apiQuery.applicant.applications.pathFilter())
-      setApplication(nextApplication)
-      setForm(toFormState(nextApplication))
+      setForm(toFormState(response.data as ApplicationRecord))
       setFieldErrors({})
       setSuccessMessage("Draft saved.")
     },
@@ -274,13 +238,11 @@ export function ApplicantApplicationPage({ mode }: { mode: "view" | "edit" }) {
   const submitApplication = useMutation({
     ...apiQuery.applicant.applications.submissions.store.mutationOptions(),
     onSuccess: (response) => {
-      const nextApplication = response.data as ApplicationRecord
       queryClient.setQueryData(
         apiQuery.applicant.applications.show.queryKey({ params: { id: applicationId } }),
         response,
       )
       queryClient.invalidateQueries(apiQuery.applicant.applications.pathFilter())
-      setApplication(nextApplication)
       setSuccessMessage("Application submitted.")
       navigate(`/applicant/applications/${applicationId}`, { replace: true })
     },
@@ -289,17 +251,6 @@ export function ApplicantApplicationPage({ mode }: { mode: "view" | "edit" }) {
   const reopenDraft = useMutation({
     ...apiQuery.applicant.application_draft_reopenings.store.mutationOptions(),
     onSuccess: (response) => {
-      setApplication((current) => {
-        if (!current) {
-          return current
-        }
-
-        return {
-          ...current,
-          status: response.application.status,
-          updatedAt: response.application.updatedAt,
-        }
-      })
       queryClient.setQueryData(
         apiQuery.applicant.applications.show.queryKey({ params: { id: applicationId } }),
         (current: { data?: ApplicationRecord } | undefined) => {
@@ -322,17 +273,8 @@ export function ApplicantApplicationPage({ mode }: { mode: "view" | "edit" }) {
     },
   })
 
-  if (applicationQuery.isLoading) {
-    return <ApplicantShell>Loading the application…</ApplicantShell>
-  }
-
-  if (applicationQuery.error || (!applicationQuery.data?.data && !application)) {
-    return <ApplicantShell>We couldn’t load that application.</ApplicantShell>
-  }
-
-  const currentApplication = application ?? (applicationQuery.data?.data as ApplicationRecord)
-  const isDraft = currentApplication.status === "draft"
-  const isChangesRequested = currentApplication.status === "changes_requested"
+  const isDraft = application.status === "draft"
+  const isChangesRequested = application.status === "changes_requested"
   const canEdit = (mode === "edit" || location.pathname.endsWith("/edit")) && isDraft
 
   function handleSaveDraft() {
@@ -345,7 +287,7 @@ export function ApplicantApplicationPage({ mode }: { mode: "view" | "edit" }) {
     }
 
     updateDraft.mutate({
-      params: { id: currentApplication.id },
+      params: { id: application.id },
       body: {
         organizationName: form.organizationName || null,
         contactName: form.contactName || null,
@@ -355,16 +297,12 @@ export function ApplicantApplicationPage({ mode }: { mode: "view" | "edit" }) {
   }
 
   function handleReopenDraft() {
-    setApplication({
-      ...currentApplication,
-      status: "draft",
-    })
-    navigate(`/applicant/applications/${currentApplication.id}/edit`, { replace: true })
-    reopenDraft.mutate({ params: { id: currentApplication.id } })
+    navigate(`/applicant/applications/${application.id}/edit`, { replace: true })
+    reopenDraft.mutate({ params: { id: application.id } })
   }
 
   return (
-    <ApplicantShell>
+    <>
       <div className="mb-6">
         <Link to="/applicant" className="text-sm font-medium text-primary underline-offset-4 hover:underline">
           Back to applications
@@ -381,12 +319,10 @@ export function ApplicantApplicationPage({ mode }: { mode: "view" | "edit" }) {
               <h1 className="text-4xl font-semibold tracking-tight text-foreground">
                 {canEdit
                   ? "Edit draft application"
-                  : currentApplication.title ??
-                    currentApplication.organizationName ??
-                    `Application #${currentApplication.id}`}
+                  : application.title ?? application.organizationName ?? `Application #${application.id}`}
               </h1>
               <p className="text-sm text-muted-foreground">
-                Status: {humanizeStatus(currentApplication.status)}
+                Status: {humanizeStatus(application.status)}
               </p>
             </div>
 
@@ -395,7 +331,7 @@ export function ApplicantApplicationPage({ mode }: { mode: "view" | "edit" }) {
                 <Button
                   size="sm"
                   variant="outline"
-                  onClick={() => navigate(`/applicant/applications/${currentApplication.id}/edit`)}
+                  onClick={() => navigate(`/applicant/applications/${application.id}/edit`)}
                 >
                   Edit draft
                 </Button>
@@ -405,7 +341,7 @@ export function ApplicantApplicationPage({ mode }: { mode: "view" | "edit" }) {
                 <Button
                   size="sm"
                   onClick={() => {
-                    submitApplication.mutate({ params: { application_id: currentApplication.id } })
+                    submitApplication.mutate({ params: { application_id: application.id } })
                   }}
                   disabled={submitApplication.isPending}
                 >
@@ -414,11 +350,7 @@ export function ApplicantApplicationPage({ mode }: { mode: "view" | "edit" }) {
               ) : null}
 
               {isChangesRequested ? (
-                <Button
-                  size="sm"
-                  onClick={handleReopenDraft}
-                  disabled={reopenDraft.isPending}
-                >
+                <Button size="sm" onClick={handleReopenDraft} disabled={reopenDraft.isPending}>
                   {reopenDraft.isPending ? "Reopening…" : "Reopen draft"}
                 </Button>
               ) : null}
@@ -472,7 +404,7 @@ export function ApplicantApplicationPage({ mode }: { mode: "view" | "edit" }) {
                 <Button
                   type="button"
                   variant="outline"
-                  onClick={() => navigate(`/applicant/applications/${currentApplication.id}`)}
+                  onClick={() => navigate(`/applicant/applications/${application.id}`)}
                 >
                   View detail
                 </Button>
@@ -480,9 +412,9 @@ export function ApplicantApplicationPage({ mode }: { mode: "view" | "edit" }) {
             </form>
           ) : (
             <div className="grid gap-4 rounded-[1.75rem] border border-border bg-muted/40 p-6">
-              <ReadOnlyRow label="Organization name" value={currentApplication.organizationName} />
-              <ReadOnlyRow label="Contact name" value={currentApplication.contactName} />
-              <ReadOnlyRow label="Contact email" value={currentApplication.contactEmail} />
+              <ReadOnlyRow label="Organization name" value={application.organizationName} />
+              <ReadOnlyRow label="Contact name" value={application.contactName} />
+              <ReadOnlyRow label="Contact email" value={application.contactEmail} />
             </div>
           )}
         </section>
@@ -499,10 +431,15 @@ export function ApplicantApplicationPage({ mode }: { mode: "view" | "edit" }) {
             </div>
 
             <div className="space-y-4">
-              {(currentApplication.history ?? []).length > 0 ? (
-                currentApplication.history?.map((entry) => (
-                  <article key={entry.id} className="rounded-[1.5rem] border border-border bg-muted/35 p-5">
-                    <p className="text-sm font-semibold text-foreground">{formatTimelineLabel(entry)}</p>
+              {(application.history ?? []).length > 0 ? (
+                application.history?.map((entry) => (
+                  <article
+                    key={entry.id}
+                    className="rounded-[1.5rem] border border-border bg-muted/35 p-5"
+                  >
+                    <p className="text-sm font-semibold text-foreground">
+                      {formatTimelineLabel(entry)}
+                    </p>
                     <p className="mt-1 text-sm text-muted-foreground">{formatDate(entry.createdAt)}</p>
                     {entry.comment ? (
                       <p className="mt-3 text-sm leading-6 text-foreground">{entry.comment}</p>
@@ -516,7 +453,7 @@ export function ApplicantApplicationPage({ mode }: { mode: "view" | "edit" }) {
           </div>
         </section>
       </div>
-    </ApplicantShell>
+    </>
   )
 }
 
