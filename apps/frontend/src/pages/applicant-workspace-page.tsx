@@ -15,6 +15,7 @@ import { CardTotalBadge } from "@/components/card-total-badge"
 import { QueuePaginationControls } from "@/components/queue-pagination"
 import { WorkflowTimeline } from "@/components/workflow-timeline"
 import { SuccessAlert } from "@/components/workspace-alert"
+import { WorkspaceErrorState } from "@/components/workspace-error-state"
 import { Badge } from "@/components/ui/badge"
 import {
   Field,
@@ -68,6 +69,7 @@ type ValidationError = {
 }
 
 type ProblemDetails = {
+  status?: number
   detail?: string
   errors?: ValidationError[]
 }
@@ -98,6 +100,22 @@ function parseProblemDetails(error: unknown) {
   }
 
   return Promise.resolve({ detail: undefined, errors: [] })
+}
+
+function problemStatusFromError(error: unknown) {
+  if (
+    typeof error === "object" &&
+    error &&
+    "response" in error &&
+    typeof error.response === "object" &&
+    error.response &&
+    "status" in error.response &&
+    typeof error.response.status === "number"
+  ) {
+    return error.response.status
+  }
+
+  return undefined
 }
 
 function fieldErrorsFromDetails(details: ProblemDetails) {
@@ -479,7 +497,7 @@ export function ApplicantWorkspacePage({
       ? Math.floor(perPageParam)
       : 20
     : 20
-  const { data, isLoading, error } = useQuery(
+  const { data, isLoading, error, refetch } = useQuery(
     apiQuery.applicant.applications.index.queryOptions({
       query: { page: activePage, perPage: activePerPage },
     })
@@ -512,9 +530,35 @@ export function ApplicantWorkspacePage({
   }
 
   if (error) {
+    const status = problemStatusFromError(error)
+
+    if (status === 401) {
+      return (
+        <ApplicantShell>
+          <WorkspaceErrorState
+            title="Sign in again to continue."
+            description="Your applicant workspace could not be loaded because your session is no longer authorized. Sign in again to fetch your applications."
+            actionLabel="Go to sign in"
+            secondaryActionLabel="Sign in page"
+            onAction={() => onSignedOut?.()}
+          />
+        </ApplicantShell>
+      )
+    }
+
     return (
       <ApplicantShell>
-        We couldn’t load your applications right now.
+        <WorkspaceErrorState
+          eyebrow="Workspace unavailable"
+          title="We couldn’t load your applications right now."
+          description="Try again. If the problem keeps happening, the server may be down or the request may have been blocked."
+          actionLabel="Retry"
+          secondaryActionLabel="Back to sign in"
+          secondaryActionTo="/login"
+          onAction={() => {
+            void refetch()
+          }}
+        />
       </ApplicantShell>
     )
   }
@@ -660,6 +704,27 @@ export function ApplicantApplicationPage({
   }
 
   if (applicationQuery.error || !data?.data) {
+    const status = problemStatusFromError(applicationQuery.error)
+
+    if (status === 401) {
+      return (
+        <ApplicantDetailShell
+          onSignedOut={onSignedOut}
+          eyebrow="Applicant area"
+          title="Sign in again to continue."
+          description="The application detail could not be loaded because your applicant session is no longer authorized."
+        >
+          <WorkspaceErrorState
+            title="Sign in again to continue."
+            description="Sign in again to reopen the application detail and continue working from the applicant area."
+            actionLabel="Go to sign in"
+            secondaryActionLabel="Sign in page"
+            onAction={() => onSignedOut?.()}
+          />
+        </ApplicantDetailShell>
+      )
+    }
+
     return (
       <ApplicantDetailShell
         onSignedOut={onSignedOut}
@@ -667,35 +732,17 @@ export function ApplicantApplicationPage({
         title="Application detail unavailable."
         description="The applicant workspace could not load that application right now."
       >
-        <Card className="rounded-[2rem] border border-border bg-background/70 shadow-sm">
-          <CardContent className="flex flex-col gap-4">
-            <p className="text-sm font-semibold tracking-[0.24em] text-primary uppercase">
-              Couldn’t load this application
-            </p>
-            <p className="text-sm leading-6 text-muted-foreground">
-              We couldn’t load that application detail page. It may have been
-              removed, or you may not have access to it.
-            </p>
-            <div className="flex flex-wrap gap-3">
-              <Button
-                size="sm"
-                onClick={() => {
-                  void applicationQuery.refetch()
-                }}
-              >
-                Retry
-              </Button>
-              <Button
-                size="sm"
-                variant="outline"
-                nativeButton={false}
-                render={<Link to="/applicant" />}
-              >
-                Back to application list
-              </Button>
-            </div>
-          </CardContent>
-        </Card>
+        <WorkspaceErrorState
+          eyebrow="Workspace unavailable"
+          title="Couldn’t load this application."
+          description="It may have been removed, or you may not have access to it."
+          actionLabel="Retry"
+          secondaryActionLabel="Back to application list"
+          secondaryActionTo="/applicant"
+          onAction={() => {
+            void applicationQuery.refetch()
+          }}
+        />
       </ApplicantDetailShell>
     )
   }
@@ -1404,4 +1451,3 @@ function ApplicantLoadingPanel({ body }: { body: string }) {
     </Card>
   )
 }
-

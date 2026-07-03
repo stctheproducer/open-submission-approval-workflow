@@ -12,6 +12,7 @@ import {
 import { AuthenticatedShell } from "@/components/authenticated-shell"
 import { WorkflowTimeline } from "@/components/workflow-timeline"
 import { ErrorAlert } from "@/components/workspace-alert"
+import { WorkspaceErrorState } from "@/components/workspace-error-state"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import {
@@ -39,6 +40,22 @@ import {
 
 import { useReviewerWorkspace } from "./use-reviewer-workspace"
 import { useApplicationPageMeta } from "@/routing/page-meta"
+
+function problemStatusFromError(error: unknown) {
+  if (
+    typeof error === "object" &&
+    error &&
+    "response" in error &&
+    typeof error.response === "object" &&
+    error.response &&
+    "status" in error.response &&
+    typeof error.response.status === "number"
+  ) {
+    return error.response.status
+  }
+
+  return undefined
+}
 
 function ReviewerAppShell({
   eyebrow,
@@ -419,6 +436,27 @@ export function ReviewerWorkspacePage({
   }
 
   if (queueQuery.error || !reviewQueue) {
+    const status = problemStatusFromError(queueQuery.error)
+
+    if (status === 401) {
+      return (
+        <ReviewerAppShell
+          onSignedOut={onSignedOut}
+          eyebrow="Reviewer area"
+          title="Sign in again to continue."
+          description="Your reviewer workspace could not be loaded because your session is no longer authorized."
+        >
+          <WorkspaceErrorState
+            title="Sign in again to continue."
+            description="Your reviewer workspace could not be loaded because your session is no longer authorized. Sign in again to fetch your review queue and continue working from the reviewer area."
+            actionLabel="Go to sign in"
+            secondaryActionLabel="Sign in page"
+            onAction={() => onSignedOut?.()}
+          />
+        </ReviewerAppShell>
+      )
+    }
+
     return (
       <ReviewerAppShell
         onSignedOut={onSignedOut}
@@ -426,7 +464,17 @@ export function ReviewerWorkspacePage({
         title="Your queue is unavailable."
         description="The reviewer workspace could not load its queue right now."
       >
-        <LoadingPanel body="We couldn’t load the review queue." />
+        <WorkspaceErrorState
+          eyebrow="Workspace unavailable"
+          title="We couldn’t load your review queue right now."
+          description="Try again. If the problem keeps happening, the server may be down or the request may have been blocked."
+          actionLabel="Retry"
+          secondaryActionLabel="Back to sign in"
+          secondaryActionTo="/login"
+          onAction={() => {
+            void refetchQueue()
+          }}
+        />
       </ReviewerAppShell>
     )
   }
@@ -546,6 +594,27 @@ export function ReviewerApplicationPage({
   }
 
   if (applicationQuery.error || !application) {
+    const status = problemStatusFromError(applicationQuery.error)
+
+    if (status === 401) {
+      return (
+        <ReviewerAppShell
+          onSignedOut={onSignedOut}
+          eyebrow="Reviewer area"
+          title="Sign in again to continue."
+          description="The application detail could not be loaded because your reviewer session is no longer authorized."
+        >
+          <WorkspaceErrorState
+            title="Sign in again to continue."
+            description="The application detail could not be loaded because your reviewer session is no longer authorized. Sign in again to reopen the review detail and continue from the reviewer area."
+            actionLabel="Go to sign in"
+            secondaryActionLabel="Sign in page"
+            onAction={() => onSignedOut?.()}
+          />
+        </ReviewerAppShell>
+      )
+    }
+
     return (
       <ReviewerAppShell
         onSignedOut={onSignedOut}
@@ -553,34 +622,17 @@ export function ReviewerApplicationPage({
         title="Application detail unavailable."
         description="The reviewer workspace could not load that application right now."
       >
-        <Card className="rounded-[2rem] border border-border bg-background/70 shadow-sm">
-          <CardContent className="flex flex-col gap-4">
-            <p className="text-sm font-semibold tracking-[0.24em] text-primary uppercase">
-              Couldn’t load this application
-            </p>
-            <p className="text-sm leading-6 text-muted-foreground">
-              We couldn’t load that reviewer detail page.
-            </p>
-            <div className="flex flex-wrap gap-3">
-              <Button
-                size="sm"
-                onClick={() => {
-                  void applicationQuery.refetch()
-                }}
-              >
-                Retry
-              </Button>
-              <Button
-                size="sm"
-                variant="outline"
-                nativeButton={false}
-                render={<Link to="/reviewer" />}
-              >
-                Back to review list
-              </Button>
-            </div>
-          </CardContent>
-        </Card>
+        <WorkspaceErrorState
+          eyebrow="Workspace unavailable"
+          title="Couldn’t load this application."
+          description="It may have been removed, or you may not have access to it."
+          actionLabel="Retry"
+          secondaryActionLabel="Back to review list"
+          secondaryActionTo="/reviewer"
+          onAction={() => {
+            void applicationQuery.refetch()
+          }}
+        />
       </ReviewerAppShell>
     )
   }

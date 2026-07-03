@@ -26,5 +26,5 @@ The frontend talks to the backend through Tuyau route paths such as `/api/v1/aut
 
 - In local development, Vite proxies `/api` to `http://localhost:3333` from [`vite.config.ts`](/Users/stctheproducer/Developer/personal-projects/open-submission-approval-workflow/apps/frontend/vite.config.ts).
 - To point the frontend at a different backend origin, set `VITE_API_URL` to that origin, for example `http://localhost:3333`.
-- In Sevalla, set `VITE_API_URL` to the backend origin so production requests go directly to `https://open-submission-approval-wo-v6bf0.sevalla.app/`.
-- Leave `VITE_API_URL` unset to use the current origin, which is useful when the frontend and backend are served together in development or tests.
+- In production, set `VITE_API_URL` to the backend API domain, for example `https://apptest-api.chandamulenga.com`.
+- The backend deployment does not need a `CORS_ORIGIN` environment variable for this setup.

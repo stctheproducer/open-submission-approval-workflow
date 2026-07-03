@@ -11,6 +11,7 @@ import {
   ReviewerApplicationPage,
   ReviewerWorkspacePage,
 } from "@/pages/reviewer-workspace-page"
+import { NotFoundPage } from "@/pages/not-found-page"
 import type { Role } from "@/routing/access-policy"
 import { ApplicantGuard, LandingRoute, ReviewerGuard } from "@/routing/access-policy"
 import { readStoredRole, storeRole } from "@/lib/auth-session"
@@ -79,6 +80,7 @@ export function App({ currentRole }: AppProps) {
           element={<ReviewerApplicationPage onSignedOut={handleSignedOut} />}
         />
       </Route>
+      <Route path="*" element={<NotFoundPage />} />
     </Routes>
   )
 }

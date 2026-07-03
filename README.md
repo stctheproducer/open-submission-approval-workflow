@@ -33,8 +33,8 @@ Core workflow rules:
 
 ## Live URL
 
-- App URL: https://apptest.chandamulenga.com
-- Backend API: https://open-submission-approval-wo-v6bf0.sevalla.app/
+- App URL: <https://apptest.chandamulenga.com>
+- Backend API: <https://apptest-api.chandamulenga.com>
 
 ### Test credentials
 
@@ -52,10 +52,10 @@ The hosted app uses the architecture described below with seeded applicant and r
 - **Backend workflow support**: AdonisJS Plus Flow during development
 - **Frontend**: React + Vite + TypeScript + shadcn/ui
 - **Frontend data layer**: `@tuyau/react-query` with a base URL controlled by `VITE_API_URL`
-- **Cross-origin support**: backend CORS is enabled for the frontend origin in production
+- **Routing**: the frontend points Tuyau at the Dokploy backend origin with `VITE_API_URL`
 - **Database**: PostgreSQL
 - **Local infrastructure**: Docker Compose for PostgreSQL and Mailpit
-- **Hosting**: Sevalla (frontend at `apptest.chandamulenga.com`, backend at `open-submission-approval-wo-v6bf0.sevalla.app`)
+- **Hosting**: Sevalla frontend at `apptest.chandamulenga.com`, Dokploy database and backend at `apptest-api.chandamulenga.com`
 
 ## Architecture
 
@@ -64,15 +64,15 @@ flowchart LR
   U["User Browser"] --> FE["Frontend Static Site (apps/frontend)"]
   U["User Browser"] --> BE["AdonisJS Backend (apps/backend)"]
   FE -->|`VITE_API_URL`| BE
-  BE --> DB["Managed PostgreSQL"]
+  BE --> DB["Self-hosted PostgreSQL"]
   BE --> FS["Persistent File Storage"]
 ```
 
 Deployment shape:
 
 - frontend at `apptest.chandamulenga.com`
-- backend at `open-submission-approval-wo-v6bf0.sevalla.app`
-- the frontend points Tuyau at the backend origin with `VITE_API_URL`
+- backend API at `apptest-api.chandamulenga.com`
+- the frontend sends API requests to `apptest-api.chandamulenga.com` via `VITE_API_URL`
 - session auth uses cookie-based requests between the browser and backend
 
 ## Local Setup
@@ -214,7 +214,7 @@ This was chosen to make:
 
 ## Authorization Model
 
-The app uses **session authentication** because the browser talks to the backend through cookie-based requests, with the frontend served on the main app domain and the backend served from the `api` subdomain.
+The app uses **session authentication** because the browser talks to the backend through cookie-based requests, with the frontend served on the main app domain and the API client pointed at the backend origin with `VITE_API_URL`.
 
 Implemented authorization model:
 
@@ -236,7 +236,7 @@ Current behavior:
 - not-found errors return structured not-found responses
 - illegal workflow transitions return `409 Conflict`
 
-Frontend requests use the browser session cookie, so the production backend must allow the frontend origin through CORS. In Sevalla, the frontend uses `VITE_API_URL` to point Tuyau directly at the backend origin instead of relying on a `/api` proxy.
+Frontend requests use the browser session cookie. The deployment does not require setting a `CORS_ORIGIN` environment variable on the backend.
 
 ## Testing Strategy
 
@@ -251,19 +251,18 @@ Current baseline:
 
 ### Hosting shape
 
-- **Backend**: containerized AdonisJS app on Sevalla at `open-submission-approval-wo-v6bf0.sevalla.app` (`apps/backend/Dockerfile`, multi-stage Node.js build)
+- **Backend**: containerized AdonisJS app on Dokploy at `apptest-api.chandamulenga.com` (`apps/backend/Dockerfile`, multi-stage Node.js build)
 - **Frontend**: static site build on Sevalla at `apptest.chandamulenga.com` (Vite production output)
-- **Routing**: the frontend uses `VITE_API_URL` to talk directly to the backend service
-- **Database**: managed PostgreSQL
+- **Routing**: the frontend points Tuyau at the backend API domain with `VITE_API_URL`
+- **Database**: self-hosted PostgreSQL on Dokploy
 
-### Session auth and CORS
+### Session auth and routing
 
 The browser talks to the backend through cookie-based session requests. In production:
 
-- the frontend static site and the backend API are on different origins (main domain vs backend origin)
-- the frontend's production API client is configured with `VITE_API_URL` so requests go directly to the backend origin
-- the backend CORS config (`apps/backend/config/cors.ts`) reads `CORS_ORIGIN` from the environment as a comma-separated allowlist and enables `credentials: true` so that session cookies travel cross-origin
-- in development, CORS allows all origins; in production, only the configured frontend origin is allowed
+- the frontend's API client is configured with `VITE_API_URL`
+- session cookies are attached to requests to the backend API domain
+- the backend does not need a `CORS_ORIGIN` environment variable for this deployment
 
 ### What the assessor can verify locally
 

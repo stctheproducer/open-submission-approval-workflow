@@ -154,6 +154,7 @@ const requestedChangesResponse = {
 
 let applicantDetailResponse = clone(detailResponse)
 let applicantRequestedChangesResponse = clone(requestedChangesResponse)
+let applicantIndexUnauthorized = false
 
 type ReviewerUser = {
   id: number
@@ -447,6 +448,7 @@ beforeEach(() => {
   reopenedApplicationIds = new Set<number>()
   applicantDetailResponse = clone(detailResponse)
   applicantRequestedChangesResponse = clone(requestedChangesResponse)
+  applicantIndexUnauthorized = false
   reviewerApplications = new Map(reviewerSeedApplications.map((application) => [application.id, clone(application)]))
   reviewerTransitionId = 4000
 
@@ -469,6 +471,21 @@ beforeEach(() => {
     }
 
     if (routeName === "applicant.applications.index") {
+      if (applicantIndexUnauthorized) {
+        throw {
+          response: {
+            status: 401,
+            json: async () => ({
+              type: "about:blank",
+              title: "Unauthorized",
+              status: 401,
+              detail: "Unauthorized access",
+              instance: "/api/v1/applicant/applications",
+            }),
+          },
+        }
+      }
+
       return listResponse
     }
 
@@ -873,10 +890,35 @@ describe("App routing", () => {
     expect(await screen.findByRole("heading", { name: "Your applications" })).toBeInTheDocument()
   })
 
+  it("shows a sign-in prompt when the applicant list request is unauthorized", async () => {
+    applicantIndexUnauthorized = true
+
+    renderWithRole("/applicant", "applicant")
+
+    expect(
+      await screen.findByRole("heading", { name: "Sign in again to continue." }),
+    ).toBeInTheDocument()
+    expect(
+      screen.getByRole("button", { name: "Go to sign in" }),
+    ).toBeInTheDocument()
+    expect(
+      screen.getByRole("button", { name: "Sign in page" }),
+    ).toBeInTheDocument()
+  })
+
   it("does not render the removed session status card", () => {
     renderAt("/")
 
     expect(screen.queryByText("Session status")).not.toBeInTheDocument()
+  })
+
+  it("renders the catchall not found page for unknown routes", () => {
+    renderAt("/this-route-does-not-exist")
+
+    expect(screen.getByRole("heading", { name: "Page unavailable." })).toBeInTheDocument()
+    expect(screen.getByRole("button", { name: "Go to sign in" })).toBeInTheDocument()
+    expect(screen.getByRole("button", { name: "Applicant workspace" })).toBeInTheDocument()
+    expect(screen.getByRole("button", { name: "Reviewer workspace" })).toBeInTheDocument()
   })
 
   it("creates a draft from the new page, edits it with the shared form, and shows backend validation feedback", async () => {

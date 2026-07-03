@@ -87,6 +87,15 @@ export const routeMetaTree: RouteObject[] = [
       robots: "noindex, nofollow",
     }),
   },
+  {
+    path: "*",
+    handle: meta({
+      title: "Page unavailable",
+      description:
+        "The page you requested could not be found. Return to the application workspace or sign in again.",
+      robots: "noindex, nofollow",
+    }),
+  },
 ]
 
 export function pageMetaForPathname(pathname: string): PageMeta {
