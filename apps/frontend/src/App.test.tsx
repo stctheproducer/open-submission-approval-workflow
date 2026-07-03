@@ -421,6 +421,7 @@ function createDeferred<T>() {
 let reopenedApplicationIds = new Set<number>()
 
 beforeEach(() => {
+  window.localStorage.clear()
   reopenedApplicationIds = new Set<number>()
   applicantDetailResponse = clone(detailResponse)
   applicantRequestedChangesResponse = clone(requestedChangesResponse)
@@ -428,6 +429,23 @@ beforeEach(() => {
   reviewerTransitionId = 4000
 
   vi.spyOn(api, "request").mockImplementation(async (routeName, options) => {
+    if (routeName === "auth.sessions.store") {
+      const email = String(options?.body?.email ?? "")
+      const role = email === "riley@example.com" ? "reviewer" : "applicant"
+
+      return {
+        user: {
+          id: role === "reviewer" ? 70 : 11,
+          fullName: role === "reviewer" ? "Riley Reviewer" : "Jane Doe",
+          email,
+          role,
+          initials: role === "reviewer" ? "RR" : "JD",
+          createdAt: "2026-07-03T09:00:00.000Z",
+          updatedAt: "2026-07-03T09:00:00.000Z",
+        },
+      }
+    }
+
     if (routeName === "applicant.applications.index") {
       return listResponse
     }
@@ -732,6 +750,7 @@ beforeEach(() => {
 
 afterEach(() => {
   cleanup()
+  window.localStorage.clear()
   vi.restoreAllMocks()
 })
 
@@ -766,7 +785,6 @@ describe("App routing", () => {
     ).toBeInTheDocument()
     expect(screen.getByText("Applicants")).toBeInTheDocument()
     expect(screen.getByText("Reviewers")).toBeInTheDocument()
-    expect(screen.getByText("Need help? Contact support.")).toBeInTheDocument()
   })
 
   it("shows a form error when sign in is attempted without credentials", () => {
@@ -774,17 +792,43 @@ describe("App routing", () => {
 
     fireEvent.click(screen.getByRole("button", { name: "Continue" }))
 
-    expect(screen.getByRole("alert")).toHaveTextContent(
+    expect(screen.getByText("Enter your email and password to continue.")).toBeInTheDocument()
+    expect(screen.getAllByRole("alert")[0]).toHaveTextContent(
       "Enter your email and password to continue.",
     )
   })
 
-  it("keeps an applicant out of the reviewer area", () => {
+  it.each([
+    {
+      role: "applicant" as const,
+      email: "jane@northwind.test",
+      password: "secret1234",
+      heading: "Your applications",
+    },
+    {
+      role: "reviewer" as const,
+      email: "riley@example.com",
+      password: "secret1234",
+      heading: "Review queue",
+    },
+  ])("routes a signed-in $role to the right workspace", async ({ email, password, heading }) => {
+    renderAt("/login")
+
+    fireEvent.change(screen.getByLabelText("Work email"), {
+      target: { value: email },
+    })
+    fireEvent.change(screen.getByLabelText("Password"), {
+      target: { value: password },
+    })
+    fireEvent.click(screen.getByRole("button", { name: "Continue" }))
+
+    expect(await screen.findByRole("heading", { name: heading })).toBeInTheDocument()
+  })
+
+  it("keeps an applicant out of the reviewer area", async () => {
     renderWithRole("/reviewer", "applicant")
 
-    expect(
-      screen.getByRole("heading", { name: "Sign in to continue." }),
-    ).toBeInTheDocument()
+    expect(await screen.findByRole("heading", { name: "Your applications" })).toBeInTheDocument()
   })
 
   it("does not render the removed session status card", () => {

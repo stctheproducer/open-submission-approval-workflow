@@ -3,6 +3,8 @@ import { Link, useParams } from "react-router"
 import { ArrowLeft, CheckCircle2, Play, UserRound } from "lucide-react"
 
 import { ReviewStateFilter } from "@/components/review-state-filter"
+import { CardTotalBadge } from "@/components/card-total-badge"
+import { QueuePagination } from "@/components/queue-pagination"
 import {
   ApplicationStatusBadge,
   ReviewStateBadge,
@@ -43,25 +45,20 @@ function ReviewerAppShell({
 }) {
   return (
     <AuthenticatedShell role="reviewer" onSignedOut={onSignedOut}>
-      <div className="relative isolate overflow-hidden rounded-[2rem] border border-border/70 bg-card/96 shadow-sm">
-        <div className="absolute inset-0 bg-[radial-gradient(circle_at_12%_12%,_rgba(95,161,125,0.16),_transparent_28%),radial-gradient(circle_at_88%_18%,_rgba(124,139,168,0.12),_transparent_30%),linear-gradient(180deg,_var(--background)_0%,_color-mix(in_oklch,var(--background),var(--muted)_8%)_100%)]" />
-        <div className="relative flex flex-col gap-8 p-6 sm:p-8 lg:p-10">
-          <section className="rounded-[2rem] border border-border/80 bg-card/96 p-8 shadow-sm backdrop-blur">
-            <div className="max-w-3xl space-y-4">
-              <p className="text-sm font-semibold tracking-[0.24em] text-primary uppercase">
-                {eyebrow}
-              </p>
-              <h1 className="text-4xl font-semibold tracking-tight text-foreground sm:text-5xl">
-                {title}
-              </h1>
-              <p className="max-w-2xl text-sm leading-6 text-muted-foreground sm:text-base">
-                {description}
-              </p>
-            </div>
-          </section>
+      <div className="flex flex-col gap-8">
+        <section className="max-w-3xl space-y-4">
+          <p className="text-sm font-semibold tracking-[0.24em] text-primary uppercase">
+            {eyebrow}
+          </p>
+          <h1 className="text-4xl font-semibold tracking-tight text-foreground sm:text-5xl">
+            {title}
+          </h1>
+          <p className="max-w-2xl text-sm leading-6 text-muted-foreground sm:text-base">
+            {description}
+          </p>
+        </section>
 
-          {children}
-        </div>
+        {children}
       </div>
     </AuthenticatedShell>
   )
@@ -98,70 +95,38 @@ function QueueOverviewCard({
   total,
   currentPage,
   lastPage,
+  onPageChange,
 }: {
   total: number
   currentPage: number
   lastPage: number
+  onPageChange: (page: number) => void
 }) {
   return (
-    <Card className="rounded-[2rem] border border-border shadow-sm">
-      <CardHeader>
-        <div className="flex flex-wrap items-start justify-between gap-4">
-          <div className="flex flex-col gap-3">
-            <p className="text-sm font-semibold tracking-[0.24em] text-primary uppercase">
-              Queue overview
-            </p>
-            <h2 className="text-3xl font-semibold tracking-tight text-foreground">
-              Review queue
-            </h2>
-            <CardDescription className="max-w-2xl text-sm leading-6">
-              Keep the queue filtered to what you need, then open an application
-              to check its history and act with confidence.
-            </CardDescription>
-          </div>
-
-          <Card className="rounded-2xl border border-border bg-muted/30 py-3 shadow-none">
-            <CardHeader className="gap-2">
-              <p className="text-xs font-semibold tracking-[0.24em] text-primary uppercase">
-                Queue size
-              </p>
-              <p className="text-2xl font-semibold tracking-tight text-foreground">
-                {total}
-              </p>
-              <CardDescription className="text-xs">
-                Page {currentPage} of {lastPage}
-              </CardDescription>
-            </CardHeader>
-          </Card>
+    <Card className="relative rounded-[2rem] border border-border shadow-sm">
+      <CardTotalBadge
+        total={total}
+        label={`${total} applications in queue`}
+      />
+      <CardContent className="flex flex-wrap items-end justify-between gap-6 pr-16">
+        <div className="flex max-w-2xl flex-col gap-3">
+          <p className="text-sm font-semibold tracking-[0.24em] text-primary uppercase">
+            Queue overview
+          </p>
+          <h2 className="text-3xl font-semibold tracking-tight text-foreground">
+            Review queue
+          </h2>
+          <CardDescription className="text-sm leading-6">
+            Keep the queue filtered to what you need, then open an application
+            to check its history and act with confidence.
+          </CardDescription>
         </div>
-      </CardHeader>
-    </Card>
-  )
-}
-
-function QueueFilterCard({
-  label,
-  description,
-  active,
-}: {
-  label: string
-  description: string
-  active: boolean
-}) {
-  return (
-    <Card
-      className={
-        active
-          ? "rounded-2xl border border-primary/30 bg-primary/8 py-4 shadow-none"
-          : "rounded-2xl border border-border bg-muted/30 py-4 shadow-none"
-      }
-    >
-      <CardHeader className="gap-2">
-        <p className="text-base font-semibold tracking-tight text-foreground">
-          {label}
-        </p>
-        <CardDescription>{description}</CardDescription>
-      </CardHeader>
+        <QueuePagination
+          currentPage={currentPage}
+          lastPage={lastPage}
+          onPageChange={onPageChange}
+        />
+      </CardContent>
     </Card>
   )
 }
@@ -300,16 +265,16 @@ function SidebarNoteCard({
     <Card
       className={
         gradient
-          ? "rounded-[2rem] border border-border bg-[linear-gradient(180deg,_var(--card)_0%,_var(--muted)_100%)] shadow-sm"
-          : "rounded-[2rem] border border-border shadow-sm"
+          ? "rounded-[2rem] border border-border/70 bg-muted/30 shadow-none"
+          : "rounded-[2rem] border border-border/70 bg-background/70 shadow-none"
       }
     >
-      <CardHeader>
-        <p className="text-sm font-semibold tracking-[0.24em] text-primary uppercase">
+      <CardHeader className="pb-3">
+        <p className="text-xs font-semibold tracking-[0.24em] text-primary uppercase">
           {title}
         </p>
       </CardHeader>
-      <CardContent className="flex flex-col gap-3 text-sm leading-6 text-muted-foreground">
+      <CardContent className="flex flex-col gap-2 text-sm leading-6 text-muted-foreground">
         {children}
       </CardContent>
     </Card>
@@ -443,6 +408,7 @@ export function ReviewerWorkspacePage({
     actionError,
     queueQuery,
     reviewQueue,
+    setQueuePage,
     setReviewFilter,
     startReview,
     isStartingReview,
@@ -485,42 +451,23 @@ export function ReviewerWorkspacePage({
       title="Review work in one place."
       description="The queue shows submitted applications plus the work assigned to you. Start review from the queue, then decide with the application timeline in view."
     >
-      <section className="grid gap-6 xl:grid-cols-[1.15fr_0.85fr]">
+      <section className="grid gap-6 xl:grid-cols-[minmax(0,1.2fr)_minmax(18rem,0.8fr)]">
         <div className="flex flex-col gap-6">
           <QueueOverviewCard
             total={reviewQueue.metadata.total}
             currentPage={reviewQueue.metadata.currentPage}
             lastPage={reviewQueue.metadata.lastPage}
+            onPageChange={setQueuePage}
           />
 
-          <Card className="rounded-[2rem] border border-border shadow-sm">
-            <CardContent className="flex flex-col gap-6">
-              {actionError ? <ErrorAlert>{actionError}</ErrorAlert> : null}
+          <div className="flex flex-col gap-4">
+            {actionError ? <ErrorAlert>{actionError}</ErrorAlert> : null}
 
-              <ReviewStateFilter
-                value={activeReviewState}
-                onValueChange={setReviewFilter}
-              />
-
-              <div className="grid gap-3 sm:grid-cols-3">
-                <QueueFilterCard
-                  label="All"
-                  description="Submitted work and your in-review queue items."
-                  active={!activeReviewState}
-                />
-                <QueueFilterCard
-                  label="Ready"
-                  description="Submitted applications without an owner."
-                  active={activeReviewState === "ready"}
-                />
-                <QueueFilterCard
-                  label="Owned"
-                  description="Applications currently assigned to you."
-                  active={activeReviewState === "owned"}
-                />
-              </div>
-            </CardContent>
-          </Card>
+            <ReviewStateFilter
+              value={activeReviewState}
+              onValueChange={setReviewFilter}
+            />
+          </div>
 
           <div className="grid gap-4">
             {reviewQueue.data.map((application) => (
@@ -534,25 +481,16 @@ export function ReviewerWorkspacePage({
           </div>
         </div>
 
-        <aside className="flex flex-col gap-6">
+        <aside className="flex flex-col gap-4 xl:pt-16">
           <SidebarNoteCard title="Queue rules" gradient>
             <p>Ready items are submitted work without an owner.</p>
             <p>Owned items are the applications currently assigned to you.</p>
-            <p>
-              Use the filter pills to narrow the queue without changing the
-              workflow order.
-            </p>
+            <p>Use the filter pills to narrow the queue.</p>
           </SidebarNoteCard>
 
           <SidebarNoteCard title="Decision surface">
-            <p>
-              Starting review moves a ready application into your owned queue
-              and keeps the audit trail visible on the detail page.
-            </p>
-            <p>
-              Approval only appears after the application is under review and
-              assigned to you.
-            </p>
+            <p>Starting review moves a ready application into your queue.</p>
+            <p>Approval only appears after assignment.</p>
           </SidebarNoteCard>
         </aside>
       </section>

@@ -40,8 +40,9 @@ export function AuthenticatedShell({
   )
 
   return (
-    <main className="min-h-svh bg-background text-foreground">
-      <header className="sticky top-0 z-40 border-b border-border/70 bg-background/90 backdrop-blur">
+    <main className="relative min-h-svh overflow-hidden bg-background text-foreground">
+      <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_12%_12%,_rgba(95,161,125,0.12),_transparent_28%),radial-gradient(circle_at_88%_18%,_rgba(124,139,168,0.08),_transparent_30%),linear-gradient(180deg,_var(--background)_0%,_color-mix(in_oklch,var(--background),var(--muted)_8%)_100%)]" />
+      <header className="relative sticky top-0 z-40 border-b border-border/70 bg-background/90 backdrop-blur">
         <div className="mx-auto flex w-full max-w-7xl flex-wrap items-center justify-between gap-4 px-6 py-4 sm:px-10 lg:px-12">
           <div className="flex flex-col gap-1">
             <span className="text-xs font-semibold tracking-[0.24em] text-primary uppercase">
@@ -76,7 +77,7 @@ export function AuthenticatedShell({
         </div>
       </header>
 
-      <div className="mx-auto w-full max-w-7xl px-6 py-8 sm:px-10 lg:px-12">
+      <div className="relative mx-auto w-full max-w-7xl px-6 py-8 sm:px-10 lg:px-12">
         {children}
       </div>
     </main>

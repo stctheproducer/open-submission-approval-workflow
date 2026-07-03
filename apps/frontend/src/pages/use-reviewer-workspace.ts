@@ -58,14 +58,19 @@ export function useReviewerWorkspace({
   const reviewState = searchParams.get("reviewState")
   const activeReviewState: ReviewState | null =
     reviewState === "ready" || reviewState === "owned" ? reviewState : null
+  const pageParam = Number(searchParams.get("page") ?? "1")
+  const activePage =
+    Number.isFinite(pageParam) && pageParam > 0 ? Math.floor(pageParam) : 1
   const [actionError, setActionError] = useState<string | null>(null)
 
   const queueQuery = useQuery({
     ...(activeReviewState
       ? apiQuery.reviewer.applications.index.queryOptions({
-          query: { reviewState: activeReviewState },
+          query: { reviewState: activeReviewState, page: activePage },
         })
-      : apiQuery.reviewer.applications.index.queryOptions()),
+      : apiQuery.reviewer.applications.index.queryOptions({
+          query: { page: activePage },
+        })),
     enabled: includeQueue,
   })
 
@@ -148,6 +153,18 @@ export function useReviewerWorkspace({
     } else {
       nextParams.delete("reviewState")
     }
+    nextParams.delete("page")
+
+    setSearchParams(nextParams, { replace: true })
+  }
+
+  function setQueuePage(nextPage: number) {
+    const nextParams = new URLSearchParams(searchParams)
+    if (nextPage <= 1) {
+      nextParams.delete("page")
+    } else {
+      nextParams.set("page", String(nextPage))
+    }
 
     setSearchParams(nextParams, { replace: true })
   }
@@ -228,6 +245,7 @@ export function useReviewerWorkspace({
     rejectCurrentApplication,
     reviewQueue,
     requestChangesCurrentApplication,
+    setQueuePage,
     setReviewFilter,
     startCurrentApplicationReview,
     startReview,

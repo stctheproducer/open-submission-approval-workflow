@@ -1,8 +1,10 @@
 import { type ReactNode, useState } from "react"
-import { Link, useLocation, useNavigate, useParams } from "react-router"
+import { Link, useLocation, useNavigate, useParams, useSearchParams } from "react-router"
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
 
 import { ApplicationStatusBadge } from "@/components/workflow-badge"
+import { CardTotalBadge } from "@/components/card-total-badge"
+import { QueuePagination } from "@/components/queue-pagination"
 import { WorkflowTimeline } from "@/components/workflow-timeline"
 import { SuccessAlert } from "@/components/workspace-alert"
 import {
@@ -86,11 +88,19 @@ export function ApplicantWorkspacePage({
   onSignedOut?: () => void
 }) {
   const navigate = useNavigate()
+  const [searchParams, setSearchParams] = useSearchParams()
+  const pageParam = Number(searchParams.get("page") ?? "1")
+  const activePage =
+    Number.isFinite(pageParam) && pageParam > 0 ? Math.floor(pageParam) : 1
   const { data, isLoading, error } = useQuery(
-    apiQuery.applicant.applications.index.queryOptions()
+    apiQuery.applicant.applications.index.queryOptions({
+      query: { page: activePage },
+    })
   )
   const applications = data?.data ?? []
   const totalApplications = Number(data?.metadata.total ?? 0)
+  const currentPage = Number(data?.metadata.currentPage ?? 1)
+  const lastPage = Number(data?.metadata.lastPage ?? 1)
 
   const createDraft = useMutation({
     ...apiQuery.applicant.applications.store.mutationOptions(),
@@ -98,6 +108,17 @@ export function ApplicantWorkspacePage({
       navigate(`/applicant/applications/${response.data.id}/edit`)
     },
   })
+
+  function setApplicationsPage(nextPage: number) {
+    const nextParams = new URLSearchParams(searchParams)
+    if (nextPage <= 1) {
+      nextParams.delete("page")
+    } else {
+      nextParams.set("page", String(nextPage))
+    }
+
+    setSearchParams(nextParams, { replace: true })
+  }
 
   if (isLoading) {
     return <ApplicantShell>Loading your applications…</ApplicantShell>
@@ -115,12 +136,16 @@ export function ApplicantWorkspacePage({
     <ApplicantShell onSignedOut={onSignedOut}>
       <section className="grid gap-8 lg:grid-cols-[1.2fr_0.8fr]">
         <div className="flex flex-col gap-5">
-          <Card className="rounded-[2rem] border border-border shadow-sm">
-            <CardHeader className="gap-4">
-              <p className="text-sm font-semibold tracking-[0.24em] text-primary uppercase">
-                Applicant area
-              </p>
-              <div className="flex flex-col gap-3">
+          <Card className="relative rounded-[2rem] border border-border shadow-sm">
+            <CardTotalBadge
+              total={totalApplications}
+              label={`${totalApplications} application${totalApplications === 1 ? "" : "s"}`}
+            />
+            <CardContent className="flex flex-wrap items-end justify-between gap-6 pr-16">
+              <div className="flex max-w-2xl flex-col gap-3">
+                <p className="text-sm font-semibold tracking-[0.24em] text-primary uppercase">
+                  Applicant area
+                </p>
                 <h1 className="text-4xl font-semibold tracking-tight text-foreground">
                   Your applications
                 </h1>
@@ -130,23 +155,24 @@ export function ApplicantWorkspacePage({
                   applicant surface.
                 </CardDescription>
               </div>
-            </CardHeader>
-            <CardContent className="flex flex-wrap items-center justify-between gap-3">
-              <p className="text-sm text-muted-foreground">
-                {totalApplications} application
-                {totalApplications === 1 ? "" : "s"} on this page
-              </p>
-              <Button
-                size="sm"
-                onClick={() => {
-                  createDraft.mutate({ body: {} })
-                }}
-                disabled={createDraft.isPending}
-              >
-                {createDraft.isPending
-                  ? "Creating draft…"
-                  : "Start a new draft"}
-              </Button>
+              <div className="flex flex-col items-end gap-3">
+                <QueuePagination
+                  currentPage={currentPage}
+                  lastPage={lastPage}
+                  onPageChange={setApplicationsPage}
+                />
+                <Button
+                  size="sm"
+                  onClick={() => {
+                    createDraft.mutate({ body: {} })
+                  }}
+                  disabled={createDraft.isPending}
+                >
+                  {createDraft.isPending
+                    ? "Creating draft…"
+                    : "Start a new draft"}
+                </Button>
+              </div>
             </CardContent>
           </Card>
 
@@ -179,7 +205,7 @@ export function ApplicantWorkspacePage({
           </div>
         </div>
 
-        <aside>
+        <aside className="order-first lg:order-none">
           <Card className="rounded-[2rem] border border-border bg-[linear-gradient(180deg,_var(--card)_0%,_var(--muted)_100%)]">
             <CardHeader>
               <p className="text-sm font-semibold tracking-[0.24em] text-primary uppercase">
@@ -615,10 +641,7 @@ function ApplicantShell({
 }) {
   return (
     <AuthenticatedShell role="applicant" onSignedOut={onSignedOut}>
-      <div className="relative isolate overflow-hidden rounded-[2rem] border border-border/70 bg-card/96 shadow-sm">
-        <div className="absolute inset-0 bg-[radial-gradient(circle_at_10%_18%,_rgba(95,161,125,0.15),_transparent_30%),radial-gradient(circle_at_88%_18%,_rgba(124,139,168,0.12),_transparent_32%),linear-gradient(180deg,_var(--background)_0%,_color-mix(in_oklch,var(--background),var(--muted)_8%)_100%)]" />
-        <div className="relative flex flex-col gap-8 p-6 sm:p-8 lg:p-10">{children}</div>
-      </div>
+      <div className="flex flex-col gap-8">{children}</div>
     </AuthenticatedShell>
   )
 }

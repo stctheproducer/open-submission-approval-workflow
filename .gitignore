@@ -39,3 +39,7 @@ public/assets
 .opencode/commands/flow-*
 
 .pnpm-store
+
+# Impeccable live tooling artifacts
+.impeccable/
+apps/frontend/.impeccable/
