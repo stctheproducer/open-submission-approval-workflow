@@ -352,14 +352,17 @@ function makeReviewerApplicationResponse(application: ReviewerApplication) {
 function buildReviewerQueueResponse(applications: ReviewerApplication[], reviewState?: string) {
   const filtered = applications.filter((application) => {
     if (reviewState === "ready") {
-      return application.reviewState === "ready"
+      return application.status === "submitted" && application.reviewState === "ready"
     }
 
     if (reviewState === "owned") {
-      return application.reviewState === "owned"
+      return application.status === "under_review" && application.reviewState === "owned"
     }
 
-    return true
+    return (
+      (application.status === "submitted" && application.reviewState === "ready") ||
+      (application.status === "under_review" && application.reviewState === "owned")
+    )
   })
 
   const ordered = [...filtered].sort((left, right) => {
@@ -629,6 +632,100 @@ beforeEach(() => {
       return makeReviewerApplicationResponse(approvedApplication)
     }
 
+    if (routeName === "reviewer.application_change_requests.store") {
+      const applicationId = Number(options?.params?.id)
+      const application = reviewerApplications.get(applicationId)
+
+      if (!application) {
+        throw new Error(`Unhandled reviewer change-request application: ${applicationId}`)
+      }
+
+      const changedAt = "2026-07-03T10:40:00.000Z"
+      const comment = String(options?.body?.comment ?? "")
+      const changedApplication: ReviewerApplication = {
+        ...application,
+        status: "changes_requested",
+        reviewState: "owned",
+        assignedReviewer: reviewerUser,
+        reviewer: reviewerUser,
+        history: [
+          ...application.history,
+          {
+            id: reviewerTransitionId++,
+            previousStatus: "under_review",
+            nextStatus: "changes_requested",
+            comment,
+            createdAt: changedAt,
+            actor: reviewerUser,
+          },
+        ],
+        statusTransitions: [
+          ...application.statusTransitions,
+          {
+            id: reviewerTransitionId++,
+            previousStatus: "under_review",
+            nextStatus: "changes_requested",
+            comment,
+            createdAt: changedAt,
+            actor: reviewerUser,
+          },
+        ],
+        updatedAt: changedAt,
+      }
+      reviewerApplications.set(applicationId, changedApplication)
+      return {
+        application: {
+          id: applicationId,
+          status: "changes_requested",
+          updatedAt: changedAt,
+        },
+      }
+    }
+
+    if (routeName === "reviewer.application_rejections.store") {
+      const applicationId = Number(options?.params?.application_id)
+      const application = reviewerApplications.get(applicationId)
+
+      if (!application) {
+        throw new Error(`Unhandled reviewer rejection application: ${applicationId}`)
+      }
+
+      const rejectedAt = "2026-07-03T10:50:00.000Z"
+      const comment = String(options?.body?.comment ?? "")
+      const rejectedApplication: ReviewerApplication = {
+        ...application,
+        status: "rejected",
+        reviewState: "owned",
+        assignedReviewer: reviewerUser,
+        reviewer: reviewerUser,
+        history: [
+          ...application.history,
+          {
+            id: reviewerTransitionId++,
+            previousStatus: "under_review",
+            nextStatus: "rejected",
+            comment,
+            createdAt: rejectedAt,
+            actor: reviewerUser,
+          },
+        ],
+        statusTransitions: [
+          ...application.statusTransitions,
+          {
+            id: reviewerTransitionId++,
+            previousStatus: "under_review",
+            nextStatus: "rejected",
+            comment,
+            createdAt: rejectedAt,
+            actor: reviewerUser,
+          },
+        ],
+        updatedAt: rejectedAt,
+      }
+      reviewerApplications.set(applicationId, rejectedApplication)
+      return makeReviewerApplicationResponse(rejectedApplication)
+    }
+
     throw new Error(`Unhandled request: ${String(routeName)}`)
   })
 })
@@ -816,6 +913,36 @@ describe("Reviewer workspace", () => {
     fireEvent.click(screen.getByRole("button", { name: "Approve application" }))
 
     expect(await screen.findByText("Approved")).toBeInTheDocument()
+  })
+
+  it("requires a comment before requesting changes and returns the reviewer to the queue after success", async () => {
+    renderWithRole("/reviewer/applications/202", "reviewer")
+
+    expect(await screen.findByRole("heading", { name: "Summit Insurance", level: 2 })).toBeInTheDocument()
+    expect(screen.getByRole("button", { name: "Request changes" })).toBeDisabled()
+
+    fireEvent.change(screen.getByLabelText("Decision comment"), {
+      target: { value: "Please clarify the budget assumptions." },
+    })
+    fireEvent.click(screen.getByRole("button", { name: "Request changes" }))
+
+    expect(await screen.findByRole("heading", { name: "Review queue" })).toBeInTheDocument()
+    expect(screen.queryByText("Summit Insurance")).not.toBeInTheDocument()
+  })
+
+  it("requires a comment before rejection and returns the reviewer to the queue after success", async () => {
+    renderWithRole("/reviewer/applications/202", "reviewer")
+
+    expect(await screen.findByRole("heading", { name: "Summit Insurance", level: 2 })).toBeInTheDocument()
+    expect(screen.getByRole("button", { name: "Reject application" })).toBeDisabled()
+
+    fireEvent.change(screen.getByLabelText("Decision comment"), {
+      target: { value: "Does not meet requirements." },
+    })
+    fireEvent.click(screen.getByRole("button", { name: "Reject application" }))
+
+    expect(await screen.findByRole("heading", { name: "Review queue" })).toBeInTheDocument()
+    expect(screen.queryByText("Summit Insurance")).not.toBeInTheDocument()
   })
 
   it("filters the queue by reviewer state and can clear the filter", async () => {

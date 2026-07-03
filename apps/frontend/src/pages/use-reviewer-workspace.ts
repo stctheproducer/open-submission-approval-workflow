@@ -111,6 +111,32 @@ export function useReviewerWorkspace({
     },
   })
 
+  const changeRequestMutation = useMutation({
+    ...apiQuery.reviewer.applicationChangeRequests.store.mutationOptions(),
+    onError: async (error) => {
+      const details = await parseProblemDetails(error)
+      setActionError(details.detail ?? "We couldn’t request changes right now.")
+    },
+    onSuccess: async () => {
+      setActionError(null)
+      navigate("/reviewer", { replace: true })
+      await queryClient.invalidateQueries(apiQuery.reviewer.applications.pathFilter())
+    },
+  })
+
+  const rejectionMutation = useMutation({
+    ...apiQuery.reviewer.applicationRejections.store.mutationOptions(),
+    onError: async (error) => {
+      const details = await parseProblemDetails(error)
+      setActionError(details.detail ?? "We couldn’t reject this application.")
+    },
+    onSuccess: async () => {
+      setActionError(null)
+      navigate("/reviewer", { replace: true })
+      await queryClient.invalidateQueries(apiQuery.reviewer.applications.pathFilter())
+    },
+  })
+
   const application = applicationQuery.data?.data as WorkflowApplication | undefined
   const reviewQueue = queueQuery.data as QueueResponse | undefined
   const currentApplicationId = application?.id ?? applicationId
@@ -148,6 +174,30 @@ export function useReviewerWorkspace({
     approvalMutation.mutate({ params: { applicationId: currentApplicationId } })
   }
 
+  async function requestChangesCurrentApplication(comment: string) {
+    if (!currentApplicationId) {
+      return
+    }
+
+    setActionError(null)
+    await changeRequestMutation.mutateAsync({
+      params: { id: currentApplicationId },
+      body: { comment },
+    })
+  }
+
+  async function rejectCurrentApplication(comment: string) {
+    if (!currentApplicationId) {
+      return
+    }
+
+    setActionError(null)
+    await rejectionMutation.mutateAsync({
+      params: { application_id: currentApplicationId },
+      body: { comment },
+    })
+  }
+
   return {
     activeReviewState,
     actionError,
@@ -155,11 +205,19 @@ export function useReviewerWorkspace({
     applicationQuery,
     approveCurrentApplication,
     canApprove: canApprove(application),
+    canReject: canApprove(application),
+    canRequestChanges: canApprove(application),
     canStartReview: canStartReview(application),
     currentApplicationId,
     isApprovalPending:
       approvalMutation.isPending &&
       approvalMutation.variables?.params.applicationId === currentApplicationId,
+    isChangeRequestPending:
+      changeRequestMutation.isPending &&
+      changeRequestMutation.variables?.params.id === currentApplicationId,
+    isRejectionPending:
+      rejectionMutation.isPending &&
+      rejectionMutation.variables?.params.application_id === currentApplicationId,
     isStartReviewPending:
       startReviewMutation.isPending &&
       startReviewMutation.variables?.params.id === currentApplicationId,
@@ -167,7 +225,9 @@ export function useReviewerWorkspace({
       startReviewMutation.isPending &&
       startReviewMutation.variables?.params.id === applicationIdToCheck,
     queueQuery,
+    rejectCurrentApplication,
     reviewQueue,
+    requestChangesCurrentApplication,
     setReviewFilter,
     startCurrentApplicationReview,
     startReview,

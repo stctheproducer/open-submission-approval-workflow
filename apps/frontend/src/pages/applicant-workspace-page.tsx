@@ -2,10 +2,28 @@ import { useState } from "react"
 import { Link, useLocation, useNavigate, useParams } from "react-router"
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
 
+import { ApplicationStatusBadge } from "@/components/workflow-badge"
+import { WorkflowTimeline } from "@/components/workflow-timeline"
+import { SuccessAlert } from "@/components/workspace-alert"
+import {
+  Field,
+  FieldContent,
+  FieldDescription,
+  FieldError,
+  FieldGroup,
+  FieldLabel,
+} from "@/components/ui/field"
 import { Button } from "@/components/ui/button"
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+} from "@/components/ui/card"
+import { Input } from "@/components/ui/input"
+import { Separator } from "@/components/ui/separator"
 import { apiQuery } from "@/lib/query"
-import { formatDate, formatTimelineLabel, getStatusTone, humanizeStatus, type WorkflowTransition } from "@/lib/review-workflow"
-import { cn } from "@/lib/utils"
+import { humanizeStatus, type WorkflowTransition } from "@/lib/review-workflow"
 
 type ApplicationRecord = {
   id: number
@@ -63,7 +81,9 @@ function toFormState(application?: ApplicationRecord): FormState {
 
 export function ApplicantWorkspacePage() {
   const navigate = useNavigate()
-  const { data, isLoading, error } = useQuery(apiQuery.applicant.applications.index.queryOptions())
+  const { data, isLoading, error } = useQuery(
+    apiQuery.applicant.applications.index.queryOptions()
+  )
   const applications = data?.data ?? []
   const totalApplications = Number(data?.metadata.total ?? 0)
 
@@ -79,30 +99,37 @@ export function ApplicantWorkspacePage() {
   }
 
   if (error) {
-    return <ApplicantShell>We couldn’t load your applications right now.</ApplicantShell>
+    return (
+      <ApplicantShell>
+        We couldn’t load your applications right now.
+      </ApplicantShell>
+    )
   }
 
   return (
     <ApplicantShell>
       <section className="grid gap-8 lg:grid-cols-[1.2fr_0.8fr]">
-        <div className="space-y-5">
-          <div className="flex flex-col gap-4 rounded-[2rem] border border-border bg-card p-8 shadow-sm">
-            <p className="text-sm font-semibold uppercase tracking-[0.24em] text-primary">
-              Applicant area
-            </p>
-            <div className="space-y-3">
-              <h1 className="text-4xl font-semibold tracking-tight text-foreground">
-                Your applications
-              </h1>
-              <p className="max-w-2xl text-sm leading-6 text-muted-foreground">
-                Start a draft, return to applications already in flight, and keep the workflow
-                history visible without leaving the applicant surface.
+        <div className="flex flex-col gap-5">
+          <Card className="rounded-[2rem] border border-border shadow-sm">
+            <CardHeader className="gap-4">
+              <p className="text-sm font-semibold tracking-[0.24em] text-primary uppercase">
+                Applicant area
               </p>
-            </div>
-            <div className="flex flex-wrap items-center justify-between gap-3">
+              <div className="flex flex-col gap-3">
+                <h1 className="text-4xl font-semibold tracking-tight text-foreground">
+                  Your applications
+                </h1>
+                <CardDescription className="max-w-2xl text-sm leading-6">
+                  Start a draft, return to applications already in flight, and
+                  keep the workflow history visible without leaving the
+                  applicant surface.
+                </CardDescription>
+              </div>
+            </CardHeader>
+            <CardContent className="flex flex-wrap items-center justify-between gap-3">
               <p className="text-sm text-muted-foreground">
-                {totalApplications} application{totalApplications === 1 ? "" : "s"} on this
-                page
+                {totalApplications} application
+                {totalApplications === 1 ? "" : "s"} on this page
               </p>
               <Button
                 size="sm"
@@ -111,57 +138,61 @@ export function ApplicantWorkspacePage() {
                 }}
                 disabled={createDraft.isPending}
               >
-                {createDraft.isPending ? "Creating draft…" : "Start a new draft"}
+                {createDraft.isPending
+                  ? "Creating draft…"
+                  : "Start a new draft"}
               </Button>
-            </div>
-          </div>
+            </CardContent>
+          </Card>
 
           <div className="grid gap-4">
             {applications.map((application) => (
-              <Link
+              <Card
                 key={application.id}
-                to={`/applicant/applications/${application.id}`}
-                className="rounded-[1.75rem] border border-border bg-card p-6 transition hover:border-primary/40 hover:shadow-sm"
+                className="rounded-[1.75rem] border border-border py-6 transition hover:border-primary/40 hover:shadow-sm"
               >
-                <div className="flex flex-wrap items-start justify-between gap-4">
-                  <div className="space-y-2">
-                    <h2 className="text-2xl font-semibold tracking-tight text-foreground">
-                      {application.title ?? application.organizationName ?? `Application #${application.id}`}
-                    </h2>
-                    <p className="text-sm text-muted-foreground">
-                      {application.contactName ?? "No contact name yet"}
-                    </p>
-                  </div>
-                  <span
-                    className={cn(
-                      "rounded-full border px-3 py-1 text-xs font-semibold uppercase tracking-[0.22em]",
-                      getStatusTone(application.status),
-                    )}
+                <CardContent>
+                  <Link
+                    to={`/applicant/applications/${application.id}`}
+                    className="flex flex-wrap items-start justify-between gap-4"
                   >
-                    {humanizeStatus(application.status)}
-                  </span>
-                </div>
-              </Link>
+                    <div className="space-y-2">
+                      <h2 className="text-2xl font-semibold tracking-tight text-foreground">
+                        {application.title ??
+                          application.organizationName ??
+                          `Application #${application.id}`}
+                      </h2>
+                      <p className="text-sm text-muted-foreground">
+                        {application.contactName ?? "No contact name yet"}
+                      </p>
+                    </div>
+                    <ApplicationStatusBadge status={application.status} />
+                  </Link>
+                </CardContent>
+              </Card>
             ))}
           </div>
         </div>
 
-        <aside className="rounded-[2rem] border border-border bg-[linear-gradient(180deg,_var(--card)_0%,_var(--muted)_100%)] p-8">
-          <div className="space-y-5">
-            <p className="text-sm font-semibold uppercase tracking-[0.24em] text-primary">
-              Workflow notes
-            </p>
-            <div className="space-y-3 text-sm leading-6 text-muted-foreground">
+        <aside>
+          <Card className="rounded-[2rem] border border-border bg-[linear-gradient(180deg,_var(--card)_0%,_var(--muted)_100%)]">
+            <CardHeader>
+              <p className="text-sm font-semibold tracking-[0.24em] text-primary uppercase">
+                Workflow notes
+              </p>
+            </CardHeader>
+            <CardContent className="flex flex-col gap-3 text-sm leading-6 text-muted-foreground">
               <p>Drafts stay editable until you submit the application.</p>
               <p>
-                Requested changes open read-only first so the reviewer feedback is clear before you
-                reopen the record for editing.
+                Requested changes open read-only first so the reviewer feedback
+                is clear before you reopen the record for editing.
               </p>
               <p>
-                Every transition is shown on the application detail page as an embedded timeline.
+                Every transition is shown on the application detail page as an
+                embedded timeline.
               </p>
-            </div>
-          </div>
+            </CardContent>
+          </Card>
         </aside>
       </section>
     </ApplicantShell>
@@ -174,7 +205,7 @@ export function ApplicantApplicationPage({ mode }: { mode: "view" | "edit" }) {
   const { data, isLoading, error } = useQuery(
     apiQuery.applicant.applications.show.queryOptions({
       params: { id: applicationId },
-    }),
+    })
   )
 
   if (isLoading) {
@@ -220,17 +251,21 @@ function ApplicantApplicationWorkspace({
       const nextErrors = Object.fromEntries(
         (response.errors ?? [])
           .filter((entry) => Boolean(entry.field))
-          .map((entry) => [entry.field as string, entry.message]),
+          .map((entry) => [entry.field as string, entry.message])
       )
       setFieldErrors(nextErrors)
       setSuccessMessage(null)
     },
     onSuccess: (response) => {
       queryClient.setQueryData(
-        apiQuery.applicant.applications.show.queryKey({ params: { id: applicationId } }),
-        response,
+        apiQuery.applicant.applications.show.queryKey({
+          params: { id: applicationId },
+        }),
+        response
       )
-      queryClient.invalidateQueries(apiQuery.applicant.applications.pathFilter())
+      queryClient.invalidateQueries(
+        apiQuery.applicant.applications.pathFilter()
+      )
       setForm(toFormState(response.data as ApplicationRecord))
       setFieldErrors({})
       setSuccessMessage("Draft saved.")
@@ -241,10 +276,14 @@ function ApplicantApplicationWorkspace({
     ...apiQuery.applicant.applications.submissions.store.mutationOptions(),
     onSuccess: (response) => {
       queryClient.setQueryData(
-        apiQuery.applicant.applications.show.queryKey({ params: { id: applicationId } }),
-        response,
+        apiQuery.applicant.applications.show.queryKey({
+          params: { id: applicationId },
+        }),
+        response
       )
-      queryClient.invalidateQueries(apiQuery.applicant.applications.pathFilter())
+      queryClient.invalidateQueries(
+        apiQuery.applicant.applications.pathFilter()
+      )
       setSuccessMessage("Application submitted.")
       navigate(`/applicant/applications/${applicationId}`, { replace: true })
     },
@@ -254,7 +293,9 @@ function ApplicantApplicationWorkspace({
     ...apiQuery.applicant.applicationDraftReopenings.store.mutationOptions(),
     onSuccess: (response) => {
       queryClient.setQueryData<{ data?: ApplicationRecord }>(
-        apiQuery.applicant.applications.show.queryKey({ params: { id: applicationId } }),
+        apiQuery.applicant.applications.show.queryKey({
+          params: { id: applicationId },
+        }),
         (current) => {
           if (!current?.data) {
             return current
@@ -268,16 +309,21 @@ function ApplicantApplicationWorkspace({
               updatedAt: response.application.updatedAt,
             },
           }
-        },
+        }
       )
-      queryClient.invalidateQueries(apiQuery.applicant.applications.pathFilter())
-      navigate(`/applicant/applications/${applicationId}/edit`, { replace: true })
+      queryClient.invalidateQueries(
+        apiQuery.applicant.applications.pathFilter()
+      )
+      navigate(`/applicant/applications/${applicationId}/edit`, {
+        replace: true,
+      })
     },
   })
 
   const isDraft = application.status === "draft"
   const isChangesRequested = application.status === "changes_requested"
-  const canEdit = (mode === "edit" || location.pathname.endsWith("/edit")) && isDraft
+  const canEdit =
+    (mode === "edit" || location.pathname.endsWith("/edit")) && isDraft
 
   function handleSaveDraft() {
     if (form.contactEmail && !isValidEmail(form.contactEmail)) {
@@ -299,161 +345,251 @@ function ApplicantApplicationWorkspace({
   }
 
   function handleReopenDraft() {
-    navigate(`/applicant/applications/${application.id}/edit`, { replace: true })
+    navigate(`/applicant/applications/${application.id}/edit`, {
+      replace: true,
+    })
     reopenDraft.mutate({ params: { id: application.id } })
   }
 
   return (
     <>
       <div className="mb-6">
-        <Link to="/applicant" className="text-sm font-medium text-primary underline-offset-4 hover:underline">
+        <Link
+          to="/applicant"
+          className="text-sm font-medium text-primary underline-offset-4 hover:underline"
+        >
           Back to applications
         </Link>
       </div>
 
       <div className="grid gap-6 xl:grid-cols-[1.1fr_0.9fr]">
-        <section className="space-y-6 rounded-[2rem] border border-border bg-card p-8">
-          <div className="flex flex-wrap items-start justify-between gap-4">
-            <div className="space-y-3">
-              <p className="text-sm font-semibold uppercase tracking-[0.24em] text-primary">
-                Application detail
-              </p>
-              <h1 className="text-4xl font-semibold tracking-tight text-foreground">
-                {canEdit
-                  ? "Edit draft application"
-                  : application.title ?? application.organizationName ?? `Application #${application.id}`}
-              </h1>
-              <p className="text-sm text-muted-foreground">
-                Status: {humanizeStatus(application.status)}
-              </p>
-            </div>
-
-            <div className="flex flex-wrap gap-3">
-              {isDraft && mode === "view" ? (
-                <Button
-                  size="sm"
-                  variant="outline"
-                  onClick={() => navigate(`/applicant/applications/${application.id}/edit`)}
-                >
-                  Edit draft
-                </Button>
-              ) : null}
-
-              {isDraft ? (
-                <Button
-                  size="sm"
-                  onClick={() => {
-                    submitApplication.mutate({ params: { application_id: application.id } })
-                  }}
-                  disabled={submitApplication.isPending}
-                >
-                  {submitApplication.isPending ? "Submitting…" : "Submit application"}
-                </Button>
-              ) : null}
-
-              {isChangesRequested ? (
-                <Button size="sm" onClick={handleReopenDraft} disabled={reopenDraft.isPending}>
-                  {reopenDraft.isPending ? "Reopening…" : "Reopen draft"}
-                </Button>
-              ) : null}
-            </div>
-          </div>
-
-          {successMessage ? (
-            <p className="rounded-2xl border border-primary/20 bg-primary/8 px-4 py-3 text-sm text-foreground">
-              {successMessage}
-            </p>
-          ) : null}
-
-          {canEdit ? (
-            <form
-              className="grid gap-5"
-              onSubmit={(event) => {
-                event.preventDefault()
-                handleSaveDraft()
-              }}
-            >
-              <Field
-                label="Organization name"
-                value={form.organizationName}
-                error={fieldErrors.organizationName}
-                onChange={(value) => {
-                  setForm((current) => ({ ...current, organizationName: value }))
-                }}
-              />
-              <Field
-                label="Contact name"
-                value={form.contactName}
-                error={fieldErrors.contactName}
-                onChange={(value) => {
-                  setForm((current) => ({ ...current, contactName: value }))
-                }}
-              />
-              <Field
-                label="Contact email"
-                type="email"
-                value={form.contactEmail}
-                error={fieldErrors.contactEmail}
-                onChange={(value) => {
-                  setForm((current) => ({ ...current, contactEmail: value }))
-                }}
-              />
+        <Card className="rounded-[2rem] border border-border">
+          <CardContent className="flex flex-col gap-6">
+            <div className="flex flex-wrap items-start justify-between gap-4">
+              <div className="space-y-3">
+                <p className="text-sm font-semibold tracking-[0.24em] text-primary uppercase">
+                  Application detail
+                </p>
+                <h1 className="text-4xl font-semibold tracking-tight text-foreground">
+                  {canEdit
+                    ? "Edit draft application"
+                    : (application.title ??
+                      application.organizationName ??
+                      `Application #${application.id}`)}
+                </h1>
+                <div className="flex flex-wrap items-center gap-3">
+                  <p className="text-sm text-muted-foreground">
+                    Status: {humanizeStatus(application.status)}
+                  </p>
+                  <ApplicationStatusBadge status={application.status} />
+                </div>
+              </div>
 
               <div className="flex flex-wrap gap-3">
-                <Button type="button" disabled={updateDraft.isPending} onClick={handleSaveDraft}>
-                  {updateDraft.isPending ? "Saving…" : "Save draft"}
-                </Button>
-                <Button
-                  type="button"
-                  variant="outline"
-                  onClick={() => navigate(`/applicant/applications/${application.id}`)}
-                >
-                  View detail
-                </Button>
-              </div>
-            </form>
-          ) : (
-            <div className="grid gap-4 rounded-[1.75rem] border border-border bg-muted/40 p-6">
-              <ReadOnlyRow label="Organization name" value={application.organizationName} />
-              <ReadOnlyRow label="Contact name" value={application.contactName} />
-              <ReadOnlyRow label="Contact email" value={application.contactEmail} />
-            </div>
-          )}
-        </section>
-
-        <section className="rounded-[2rem] border border-border bg-card p-8">
-          <div className="space-y-4">
-            <div className="space-y-2">
-              <p className="text-sm font-semibold uppercase tracking-[0.24em] text-primary">
-                Embedded audit
-              </p>
-              <h2 className="text-2xl font-semibold tracking-tight text-foreground">
-                Application timeline
-              </h2>
-            </div>
-
-            <div className="space-y-4">
-              {(application.history ?? []).length > 0 ? (
-                application.history?.map((entry) => (
-                  <article
-                    key={entry.id}
-                    className="rounded-[1.5rem] border border-border bg-muted/35 p-5"
+                {isDraft && mode === "view" ? (
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    onClick={() =>
+                      navigate(`/applicant/applications/${application.id}/edit`)
+                    }
                   >
-                    <p className="text-sm font-semibold text-foreground">
-                      {formatTimelineLabel(entry)}
-                    </p>
-                    <p className="mt-1 text-sm text-muted-foreground">{formatDate(entry.createdAt)}</p>
-                    {entry.comment ? (
-                      <p className="mt-3 text-sm leading-6 text-foreground">{entry.comment}</p>
-                    ) : null}
-                  </article>
-                ))
-              ) : (
-                <p className="text-sm text-muted-foreground">No workflow transitions yet.</p>
-              )}
+                    Edit draft
+                  </Button>
+                ) : null}
+
+                {isDraft ? (
+                  <Button
+                    size="sm"
+                    onClick={() => {
+                      submitApplication.mutate({
+                        params: { application_id: application.id },
+                      })
+                    }}
+                    disabled={submitApplication.isPending}
+                  >
+                    {submitApplication.isPending
+                      ? "Submitting…"
+                      : "Submit application"}
+                  </Button>
+                ) : null}
+
+                {isChangesRequested ? (
+                  <Button
+                    size="sm"
+                    onClick={handleReopenDraft}
+                    disabled={reopenDraft.isPending}
+                  >
+                    {reopenDraft.isPending ? "Reopening…" : "Reopen draft"}
+                  </Button>
+                ) : null}
+              </div>
             </div>
-          </div>
-        </section>
+
+            <Separator className="bg-border/70" />
+
+            {successMessage ? (
+              <SuccessAlert>{successMessage}</SuccessAlert>
+            ) : null}
+
+            {canEdit ? (
+              <form
+                className="flex flex-col gap-5"
+                onSubmit={(event) => {
+                  event.preventDefault()
+                  handleSaveDraft()
+                }}
+              >
+                <FieldGroup className="gap-5">
+                  <Field
+                    data-invalid={
+                      Boolean(fieldErrors.organizationName) || undefined
+                    }
+                  >
+                    <FieldContent>
+                      <FieldLabel htmlFor="organization-name">
+                        Organization name
+                      </FieldLabel>
+                      <FieldDescription id="organization-name-description">
+                        The legal or trading name shown to reviewers.
+                      </FieldDescription>
+                      <Input
+                        id="organization-name"
+                        value={form.organizationName}
+                        onChange={(event) => {
+                          setForm((current) => ({
+                            ...current,
+                            organizationName: event.target.value,
+                          }))
+                        }}
+                        aria-invalid={Boolean(fieldErrors.organizationName)}
+                        aria-describedby={
+                          fieldErrors.organizationName
+                            ? "organization-name-description organization-name-error"
+                            : "organization-name-description"
+                        }
+                      />
+                      <FieldError id="organization-name-error">
+                        {fieldErrors.organizationName}
+                      </FieldError>
+                    </FieldContent>
+                  </Field>
+
+                  <Field
+                    data-invalid={Boolean(fieldErrors.contactName) || undefined}
+                  >
+                    <FieldContent>
+                      <FieldLabel htmlFor="contact-name">
+                        Contact name
+                      </FieldLabel>
+                      <FieldDescription id="contact-name-description">
+                        The person reviewers should address in the workflow.
+                      </FieldDescription>
+                      <Input
+                        id="contact-name"
+                        value={form.contactName}
+                        onChange={(event) => {
+                          setForm((current) => ({
+                            ...current,
+                            contactName: event.target.value,
+                          }))
+                        }}
+                        aria-invalid={Boolean(fieldErrors.contactName)}
+                        aria-describedby={
+                          fieldErrors.contactName
+                            ? "contact-name-description contact-name-error"
+                            : "contact-name-description"
+                        }
+                      />
+                      <FieldError id="contact-name-error">
+                        {fieldErrors.contactName}
+                      </FieldError>
+                    </FieldContent>
+                  </Field>
+
+                  <Field
+                    data-invalid={
+                      Boolean(fieldErrors.contactEmail) || undefined
+                    }
+                  >
+                    <FieldContent>
+                      <FieldLabel htmlFor="contact-email">
+                        Contact email
+                      </FieldLabel>
+                      <FieldDescription id="contact-email-description">
+                        Used for submission follow-up and reviewer
+                        communication.
+                      </FieldDescription>
+                      <Input
+                        id="contact-email"
+                        type="email"
+                        value={form.contactEmail}
+                        onChange={(event) => {
+                          setForm((current) => ({
+                            ...current,
+                            contactEmail: event.target.value,
+                          }))
+                        }}
+                        aria-invalid={Boolean(fieldErrors.contactEmail)}
+                        aria-describedby={
+                          fieldErrors.contactEmail
+                            ? "contact-email-description contact-email-error"
+                            : "contact-email-description"
+                        }
+                      />
+                      <FieldError id="contact-email-error">
+                        {fieldErrors.contactEmail}
+                      </FieldError>
+                    </FieldContent>
+                  </Field>
+                </FieldGroup>
+
+                <div className="flex flex-wrap gap-3">
+                  <Button
+                    type="button"
+                    disabled={updateDraft.isPending}
+                    onClick={handleSaveDraft}
+                  >
+                    {updateDraft.isPending ? "Saving…" : "Save draft"}
+                  </Button>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={() =>
+                      navigate(`/applicant/applications/${application.id}`)
+                    }
+                  >
+                    View detail
+                  </Button>
+                </div>
+              </form>
+            ) : (
+              <Card className="rounded-[1.75rem] border border-border bg-muted/40 py-6 shadow-none">
+                <CardContent className="grid gap-4">
+                  <ReadOnlyRow
+                    label="Organization name"
+                    value={application.organizationName}
+                  />
+                  <ReadOnlyRow
+                    label="Contact name"
+                    value={application.contactName}
+                  />
+                  <ReadOnlyRow
+                    label="Contact email"
+                    value={application.contactEmail}
+                  />
+                </CardContent>
+              </Card>
+            )}
+          </CardContent>
+        </Card>
+
+        <WorkflowTimeline
+          eyebrow="Embedded audit"
+          title="Application timeline"
+          emptyMessage="No workflow transitions yet."
+          history={application.history}
+        />
       </div>
     </>
   )
@@ -467,53 +603,21 @@ function ApplicantShell({ children }: { children: React.ReactNode }) {
   )
 }
 
-function Field({
+function ReadOnlyRow({
   label,
   value,
-  onChange,
-  error,
-  type = "text",
 }: {
   label: string
-  value: string
-  onChange: (value: string) => void
-  error?: string
-  type?: string
+  value?: string | null
 }) {
-  const id = label.toLowerCase().replace(/\s+/g, "-")
-
-  return (
-    <div className="space-y-2">
-      <label className="text-sm font-medium text-foreground" htmlFor={id}>
-        {label}
-      </label>
-      <input
-        id={id}
-        type={type}
-        value={value}
-        onChange={(event) => {
-          onChange(event.target.value)
-        }}
-        aria-invalid={Boolean(error)}
-        aria-describedby={error ? `${id}-error` : undefined}
-        className="h-12 w-full rounded-2xl border border-border bg-background px-4 text-sm text-foreground outline-none transition focus:border-primary focus:ring-2 focus:ring-primary/20"
-      />
-      {error ? (
-        <p id={`${id}-error`} className="text-sm text-destructive">
-          {error}
-        </p>
-      ) : null}
-    </div>
-  )
-}
-
-function ReadOnlyRow({ label, value }: { label: string; value?: string | null }) {
   return (
     <div className="rounded-2xl border border-border bg-card px-4 py-3">
-      <p className="text-xs font-semibold uppercase tracking-[0.2em] text-muted-foreground">
+      <p className="text-xs font-semibold tracking-[0.2em] text-muted-foreground uppercase">
         {label}
       </p>
-      <p className="mt-2 text-sm text-foreground">{value || "Not provided yet"}</p>
+      <p className="mt-2 text-sm text-foreground">
+        {value || "Not provided yet"}
+      </p>
     </div>
   )
 }
