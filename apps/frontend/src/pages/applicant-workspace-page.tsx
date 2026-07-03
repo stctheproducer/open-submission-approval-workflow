@@ -1203,9 +1203,18 @@ function ApplicantApplicationWorkspace({
                           Selected: {attachmentFile.name}
                         </Badge>
                       ) : application.attachmentUrl ? (
-                        <Badge variant="outline">
-                          Attachment already uploaded
-                        </Badge>
+                        <Badge
+                          variant="outline"
+                          render={
+                            <a
+                              href={application.attachmentUrl}
+                              target="_blank"
+                              rel="noreferrer"
+                            >
+                              Open attachment
+                            </a>
+                          }
+                        />
                       ) : null}
                       <FieldError id="application-attachment-error">
                         {fieldErrors.attachment}
