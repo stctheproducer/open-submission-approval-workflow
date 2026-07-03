@@ -34,7 +34,7 @@ Core workflow rules:
 ## Live URL
 
 - App URL: https://apptest.chandamulenga.com
-- Backend API: https://api.apptest.chandamulenga.com (proxied through `/api` on the frontend)
+- Backend API: https://open-submission-approval-wo-v6bf0.sevalla.app/
 
 ### Test credentials
 
@@ -51,11 +51,11 @@ The hosted app uses the architecture described below with seeded applicant and r
 - **Backend**: AdonisJS 7, Lucid ORM, PostgreSQL, session auth, Bouncer, Drive, VineJS, Tuyau
 - **Backend workflow support**: AdonisJS Plus Flow during development
 - **Frontend**: React + Vite + TypeScript + shadcn/ui
-- **Frontend data layer**: `@tuyau/react-query` with a base URL that defaults to `/api`
+- **Frontend data layer**: `@tuyau/react-query` with a base URL controlled by `VITE_API_URL`
 - **Cross-origin support**: backend CORS is enabled for the frontend origin in production
 - **Database**: PostgreSQL
 - **Local infrastructure**: Docker Compose for PostgreSQL and Mailpit
-- **Hosting**: Sevalla (frontend at `apptest.chandamulenga.com`, backend at `api.apptest.chandamulenga.com`)
+- **Hosting**: Sevalla (frontend at `apptest.chandamulenga.com`, backend at `open-submission-approval-wo-v6bf0.sevalla.app`)
 
 ## Architecture
 
@@ -63,7 +63,7 @@ The hosted app uses the architecture described below with seeded applicant and r
 flowchart LR
   U["User Browser"] --> FE["Frontend Static Site (apps/frontend)"]
   U["User Browser"] --> BE["AdonisJS Backend (apps/backend)"]
-  FE -->|"/api" redirects| BE
+  FE -->|`VITE_API_URL`| BE
   BE --> DB["Managed PostgreSQL"]
   BE --> FS["Persistent File Storage"]
 ```
@@ -71,8 +71,8 @@ flowchart LR
 Deployment shape:
 
 - frontend at `apptest.chandamulenga.com`
-- backend at `api.apptest.chandamulenga.com`
-- Sevalla redirects proxy `/api` requests from the frontend app to the backend service
+- backend at `open-submission-approval-wo-v6bf0.sevalla.app`
+- the frontend points Tuyau at the backend origin with `VITE_API_URL`
 - session auth uses cookie-based requests between the browser and backend
 
 ## Local Setup
@@ -236,7 +236,7 @@ Current behavior:
 - not-found errors return structured not-found responses
 - illegal workflow transitions return `409 Conflict`
 
-Frontend requests use the browser session cookie, so the production backend must allow the frontend origin through CORS even though the frontend API client defaults to the proxied `/api` path in production.
+Frontend requests use the browser session cookie, so the production backend must allow the frontend origin through CORS. In Sevalla, the frontend uses `VITE_API_URL` to point Tuyau directly at the backend origin instead of relying on a `/api` proxy.
 
 ## Testing Strategy
 
@@ -251,23 +251,23 @@ Current baseline:
 
 ### Hosting shape
 
-- **Backend**: containerized AdonisJS app on Sevalla at `api.apptest.chandamulenga.com` (`apps/backend/Dockerfile`, multi-stage Node.js build)
+- **Backend**: containerized AdonisJS app on Sevalla at `open-submission-approval-wo-v6bf0.sevalla.app` (`apps/backend/Dockerfile`, multi-stage Node.js build)
 - **Frontend**: static site build on Sevalla at `apptest.chandamulenga.com` (Vite production output)
-- **Routing**: Sevalla redirects proxy `/api` requests from the frontend app to the backend service
+- **Routing**: the frontend uses `VITE_API_URL` to talk directly to the backend service
 - **Database**: managed PostgreSQL
 
 ### Session auth and CORS
 
 The browser talks to the backend through cookie-based session requests. In production:
 
-- the frontend static site and the backend API are on different origins (main domain vs `api` subdomain)
-- the Sevalla `/api` proxy makes the frontend's `/api` requests reach the backend transparently
+- the frontend static site and the backend API are on different origins (main domain vs backend origin)
+- the frontend's production API client is configured with `VITE_API_URL` so requests go directly to the backend origin
 - the backend CORS config (`apps/backend/config/cors.ts`) reads `CORS_ORIGIN` from the environment as a comma-separated allowlist and enables `credentials: true` so that session cookies travel cross-origin
 - in development, CORS allows all origins; in production, only the configured frontend origin is allowed
 
 ### What the assessor can verify locally
 
-The local setup mirrors the production shape: the backend runs with `SESSION_DRIVER=cookie`, the frontend Vite dev server proxies `/api` to the backend, and the seeded users let you sign in as either role without any additional configuration.
+The local setup mirrors the production shape: the backend runs with `SESSION_DRIVER=cookie`, the frontend Vite dev server proxies `/api` to the backend during development, and the seeded users let you sign in as either role without any additional configuration.
 
 ### AdonisJS Plus note
 
