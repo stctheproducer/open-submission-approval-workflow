@@ -34,16 +34,16 @@ WORKDIR /app
 
 ENV NODE_ENV=production
 ENV HOST=0.0.0.0
-ENV PORT=3333
+ENV PORT=8080
 
+COPY .npmrc package.json pnpm-lock.yaml pnpm-workspace.yaml turbo.json ./
+COPY apps/backend/package.json apps/backend/package.json
 COPY --from=build /app/apps/backend/build ./
-COPY pnpm-lock.yaml ./
-COPY apps/backend/package.json ./package.json
 
 RUN mkdir -p storage tmp
 
-RUN pnpm install --prod --frozen-lockfile
+RUN pnpm install --prod --no-frozen-lockfile --filter @api-starter-kit/backend...
 
-EXPOSE 3333
+EXPOSE 8080
 
 CMD ["node", "bin/server.js"]
